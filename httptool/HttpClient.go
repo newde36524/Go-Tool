@@ -2,9 +2,12 @@ package httptool
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -13,7 +16,10 @@ type HttpClient struct {
 }
 
 func NewHttpClient() *HttpClient {
-	return &HttpClient{}
+	// text/plain
+	return &HttpClient{
+		Header: make(map[string]string, 0),
+	}
 }
 
 //发起Get请求
@@ -43,14 +49,15 @@ type FormItem struct {
 // FormData提交
 func (this *HttpClient) Form(url string, formItemList []FormItem) (string, error) {
 	boundary := "----WebKitFormBoundary7MA4YWxkTrZu0gW"
-	spliteStr := "\n" + boundary
+	spliteStr := boundary
 	this.Header["Content-Type"] = "multipart/form-data; boundary=" + boundary
 	buffers := make([]io.Reader, 0)
 	slice := make([]string, 0)
+	slice = append(slice, "")
 	slice = append(slice, spliteStr)
 
 	for _, v := range formItemList {
-		ContentDisposition := "Content-Disposition: form-data; name=\"" + v.Name + "\"" + ""
+		ContentDisposition := "Content-Disposition: form-data; name=\"" + v.Name + "\""
 		if v.FileName != "" && v.FileData != nil {
 			ContentDisposition = ContentDisposition + ";filename=" + v.FileName
 			buffers = append(buffers, v.FileData)
@@ -62,10 +69,14 @@ func (this *HttpClient) Form(url string, formItemList []FormItem) (string, error
 		slice = append(slice, "")
 		slice = append(slice, v.Value)
 		slice = append(slice, spliteStr)
+		slice = append(slice, "")
 	}
-	buffer := bytes.NewBufferString(strings.Join(slice, "\n"))
-	buffers = append(buffers[:0], buffer)
-	request_reader := io.MultiReader(buffers...)
+	buffer := bytes.NewBufferString(strings.Join(slice, "\r\n"))
+	// buffers = append(buffers[:0], buffer)
+	endBuffers := make([]io.Reader, 0)
+	endBuffers = append(endBuffers, buffer)
+	endBuffers = append(endBuffers, buffers...)
+	request_reader := io.MultiReader(endBuffers...)
 
 	content, err := this.httpHandle(Post(), url, request_reader)
 	return content, err
@@ -107,44 +118,44 @@ Content-Type: image/png
 
 
 */
-// func postFile(filename string, target_url string) (*http.Response, error) {
-// 	body_buf := bytes.NewBufferString("")
-// 	body_writer := multipart.NewWriter(body_buf)
+func postFile(filename string, target_url string) (*http.Response, error) {
+	body_buf := bytes.NewBufferString("")
+	body_writer := multipart.NewWriter(body_buf)
 
-// 	// use the body_writer to write the Part headers to the buffer
-// 	_, err := body_writer.CreateFormFile("userfile", filename)
-// 	if err != nil {
-// 		fmt.Println("error writing to buffer")
-// 		return nil, err
-// 	}
+	// use the body_writer to write the Part headers to the buffer
+	_, err := body_writer.CreateFormFile("userfile", filename)
+	if err != nil {
+		fmt.Println("error writing to buffer")
+		return nil, err
+	}
 
-// 	// the file data will be the second part of the body
-// 	fh, err := os.Open(filename)
-// 	if err != nil {
-// 		fmt.Println("error opening file")
-// 		return nil, err
-// 	}
-// 	// need to know the boundary to properly close the part myself.
-// 	boundary := body_writer.Boundary()
-// 	//close_string := fmt.Sprintf("\r\n--%s--\r\n", boundary)
-// 	close_buf := bytes.NewBufferString(fmt.Sprintf("\r\n--%s--\r\n", boundary))
+	// the file data will be the second part of the body
+	fh, err := os.Open(filename)
+	if err != nil {
+		fmt.Println("error opening file")
+		return nil, err
+	}
+	// need to know the boundary to properly close the part myself.
+	boundary := body_writer.Boundary()
+	//close_string := fmt.Sprintf("\r\n--%s--\r\n", boundary)
+	close_buf := bytes.NewBufferString(fmt.Sprintf("\r\n--%s--\r\n", boundary))
 
-// 	// use multi-reader to defer the reading of the file data until
-// 	// writing to the socket buffer.
-// 	request_reader := io.MultiReader(body_buf, fh, close_buf)
-// 	fi, err := fh.Stat()
-// 	if err != nil {
-// 		fmt.Printf("Error Stating file: %s", filename)
-// 		return nil, err
-// 	}
-// 	req, err := http.NewRequest("POST", target_url, request_reader)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	// use multi-reader to defer the reading of the file data until
+	// writing to the socket buffer.
+	request_reader := io.MultiReader(body_buf, fh, close_buf)
+	fi, err := fh.Stat()
+	if err != nil {
+		fmt.Printf("Error Stating file: %s", filename)
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", target_url, request_reader)
+	if err != nil {
+		return nil, err
+	}
 
-// 	// Set headers for multipart, and Content Length
-// 	req.Header.Add("Content-Type", "multipart/form-data; boundary="+boundary)
-// 	req.ContentLength = fi.Size() + int64(body_buf.Len()) + int64(close_buf.Len())
+	// Set headers for multipart, and Content Length
+	req.Header.Add("Content-Type", "multipart/form-data; boundary="+boundary)
+	req.ContentLength = fi.Size() + int64(body_buf.Len()) + int64(close_buf.Len())
 
-// 	return http.DefaultClient.Do(req)
-// }
+	return http.DefaultClient.Do(req)
+}

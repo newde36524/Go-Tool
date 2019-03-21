@@ -1,15 +1,20 @@
 package main
 
 import (
-	"io"
 	"log"
+
+	"./httptool"
 )
 
 func main() {
-	// httpClient := &httptool.HttpClient{}
-	// log.Println(httpClient.Get("http://www.baidu.com", nil))
-	var reader io.Reader
-
-	log.Println(reader)
-
+	httpClient := httptool.NewHttpClient()
+	httpClient.Header["Content-Type"] = "application/json"
+	result, err := httpClient.Post("https://localhost:44316/api/values/PostData", `{
+		"name":"tom"
+	}`)
+	if err == nil {
+		log.Println(result)
+	} else {
+		log.Println(err)
+	}
 }
