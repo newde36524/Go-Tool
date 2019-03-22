@@ -22,11 +22,23 @@ type RedisClientOption struct {
 }
 
 type RedisClient struct {
-	c redis.Conn
+	c      redis.Conn
+	addr   string
+	option *RedisClientOption
 }
 
-func (this *RedisClient) Login(addr string, option *RedisClientOption) {
-	c, err := redis.Dial("tcp", addr, []redis.DialOption{
+func NewRedisClient(option *RedisClientOption) *RedisClient {
+	var result *RedisClient = &RedisClient{
+		option: option,
+	}
+	return result
+}
+
+func (this *RedisClient) Connect(addr string) {
+	this.Close()
+	this.addr = addr
+	option := this.option
+	c, err := redis.Dial("tcp", this.addr, []redis.DialOption{
 		redis.DialReadTimeout(option.ReadTimeout),
 		redis.DialWriteTimeout(option.WriteTimeout),
 		redis.DialConnectTimeout(option.ConnectTimeout),
@@ -46,6 +58,9 @@ func (this *RedisClient) Login(addr string, option *RedisClientOption) {
 }
 
 func (this *RedisClient) Close() error {
+	if this.c == nil {
+		return nil
+	}
 	return this.c.Close()
 }
 func (this *RedisClient) Set(key, value string) (string, error) {
