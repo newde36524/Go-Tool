@@ -31,8 +31,14 @@ func (app *Application) Build() Middleware {
 	var middleware Middleware = func(o interface{}) {
 
 	}
-	for _, m := range app.components {
+	for _, m := range revertComponent(app.components) {
 		middleware = m(middleware)
 	}
 	return middleware
+}
+func revertComponent(arr []Component) []Component {
+	for i, j := 0, len(arr)-1; i < j; i, j = i+1, j-1 {
+		arr[i], arr[j] = arr[j], arr[i]
+	}
+	return arr
 }

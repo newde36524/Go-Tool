@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"./arraytool"
 	middle "./middleware"
 )
 
@@ -32,11 +33,15 @@ func main() {
 // 	res, err = client.Get("a")
 // 	fmt.Println("Get", res, err)
 // }
+func TestRevertArray() {
+	fmt.Println(arraytool.RevertArray([]interface{}{0x1, 0x2, 0x3}))
+}
+
 func TestMiddleware() {
 	app := middle.NewApplication()
-	app.Use(MiddlewareC)
-	app.Use(MiddlewareB)
 	app.Use(MiddlewareA)
+	app.Use(MiddlewareB)
+	app.Use(MiddlewareC)
 	app.Build()(1)
 }
 
