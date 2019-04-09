@@ -3,10 +3,18 @@ package main
 import (
 	"fmt"
 
+	"github.com/issue9/logs"
+
 	"./arraytool"
 	middle "./middleware"
 )
 
+func init() {
+	err := logs.InitFromXMLFile("config/logs.xml")
+	if err != nil {
+		fmt.Println(err)
+	}
+}
 func main() {
 	TestMiddleware()
 }
@@ -42,24 +50,29 @@ func TestMiddleware() {
 	app.Use(MiddlewareA)
 	app.Use(MiddlewareB)
 	app.Use(MiddlewareC)
-	app.Build()(1)
+	middleware := app.Build()
+	middleware(1)
+	// middleware(1)
 }
 
 func MiddlewareA(middleware middle.Middleware) middle.Middleware {
 	return func(o interface{}) {
-		fmt.Println("A")
+		logs.Info("A1")
 		middleware(o)
+		logs.Info("A2")
 	}
 }
 func MiddlewareB(middleware middle.Middleware) middle.Middleware {
 	return func(o interface{}) {
-		fmt.Println("B")
+		logs.Info("B1")
 		middleware(o)
+		logs.Info("B2")
 	}
 }
 func MiddlewareC(middleware middle.Middleware) middle.Middleware {
 	return func(o interface{}) {
-		fmt.Println("C")
+		logs.Info("C1")
 		middleware(o)
+		logs.Info("C2")
 	}
 }
