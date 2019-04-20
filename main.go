@@ -2,13 +2,17 @@ package main
 
 import (
 	"fmt"
+	"time"
 
+	"./BulkRunTool"
 	"./arraytool"
 	middle "./middleware"
 )
 
 func main() {
 	TestMiddleware()
+	TestBulkRunFuncs()
+	<-time.After(24 * time.Hour)
 }
 
 // func ReadFile(index, pagnum int, filePath string) {
@@ -35,6 +39,48 @@ func main() {
 // }
 func TestRevertArray() {
 	fmt.Println(arraytool.RevertArray([]interface{}{0x1, 0x2, 0x3}))
+}
+
+func TestBulkRunFuncs() {
+	fnArr := []func(){
+		func() {
+			fmt.Println("1")
+			time.Sleep(1 * time.Second)
+		},
+		func() {
+			fmt.Println("2")
+			time.Sleep(1 * time.Second)
+		},
+		func() {
+			fmt.Println("3")
+			time.Sleep(1 * time.Second)
+		},
+		func() {
+			fmt.Println("4")
+			time.Sleep(1 * time.Second)
+		},
+		func() {
+			fmt.Println("5")
+			time.Sleep(1 * time.Second)
+		},
+		func() {
+			fmt.Println("6")
+			time.Sleep(1 * time.Second)
+		},
+		func() {
+			fmt.Println("7")
+			time.Sleep(1 * time.Second)
+		},
+		func() {
+			fmt.Println("8")
+			time.Sleep(1 * time.Second)
+		},
+		func() {
+			fmt.Println("9")
+			time.Sleep(1 * time.Second)
+		},
+	}
+	BulkRunTool.RunTask(3, fnArr)
 }
 
 func TestMiddleware() {
