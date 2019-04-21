@@ -10,4 +10,5 @@ func RunTask(maxTask int, funcs []func()) {
 			<-ch
 		}(fn)
 	}
+	close(ch)
 }

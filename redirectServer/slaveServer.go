@@ -16,6 +16,7 @@ import (
 
 */
 
+//SlaveServer 从转发服务器
 type SlaveServer struct {
 	MasterConn       *net.TCPConn //主服务器连接
 	SlaveTCPListener *net.TCPListener
@@ -42,45 +43,49 @@ func NewSlaveServer(localAddr *net.TCPAddr, remoteAddr *net.TCPAddr) (*SlaveServ
 
 //Start 开始运行服务端
 func (srv *SlaveServer) Start() {
-	go srv.OnConnection()
+	go srv.onConnection()
 }
 
-//OnConnection 连接处理程序
-func (srv *SlaveServer) OnConnection() {
-	go srv.OnReceiv(srv.MasterConn)
+//onConnection 连接处理程序
+func (srv *SlaveServer) onConnection() {
+	go srv.onReceiv(srv.MasterConn)
 	for {
 		conn, err := srv.SlaveTCPListener.AcceptTCP()
 		if err != nil {
 			logs.Error(err)
 		} else {
 			srv.ConnList = append(srv.ConnList, conn)
-			go srv.OnSend(conn)
+			go srv.onSend(conn)
 		}
 	}
 }
 
-//OnSend 业务服务器上发数据时处理
-func (srv *SlaveServer) OnSend(conn *net.TCPConn) { //业务服务器连接
+//onSend 业务服务器上发数据时处理
+func (srv *SlaveServer) onSend(conn *net.TCPConn) { //业务服务器连接
 	buffer := make([]byte, 1024)
 	for {
 		n, err := conn.Read(buffer) //读取业务服务器上发的数据并转发给主服务器
 		if err != nil {
 			logs.Error(err)
+			break
 		}
 		srv.MasterConn.Write(buffer[:n])
 	}
+	logs.Info("onSend exiting")
 }
 
-//OnReceiv 远程服务器下发数据时处理
-func (srv *SlaveServer) OnReceiv(conn *net.TCPConn) { //远程服务器连接
+//onReceiv 远程服务器下发数据时处理
+func (srv *SlaveServer) onReceiv(conn *net.TCPConn) { //远程服务器连接
 	buffer := make([]byte, 1024)
 	for {
 		n, err := conn.Read(buffer)
 		if err != nil {
 			logs.Error(err)
+			break
 		}
 		for _, c := range srv.ConnList { //读取远程服务器发送的数据并转发给所有业务服务器
 			c.Write(buffer[:n])
 		}
 	}
+	logs.Info("onReceiv exiting")
 }
