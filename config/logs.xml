@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<logs>
+    <info prefix="[INFO]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stdout" foreground="green" background="default" />
+        <!-- <buffer size="100">
+            <rotate filename="info-%Y%m%d.%i.log" dir="./output/logs/" size="5M" />
+        </buffer> -->
+    </info>
+
+    <debug prefix="[DEBUG]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="yellow" background="default" />
+        <!-- <buffer size="100">
+            <rotate filename="info-%Y%m%d.%i.log" dir="./output/logs/" size="5M" />
+        </buffer> -->
+    </debug>
+
+    <trace prefix="[TRACE]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="yellow" background="default" />
+        <buffer size="50">
+            <rotate filename="trace-%Y%m%d.%i.log" dir="./output/logs/" size="5M" />
+        </buffer>
+    </trace>
+
+    <warn prefix="[WARNNING]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="yellow" background="default" />
+        <rotate filename="warning-%Y%m%d.%i.log" dir="./output/logs/" size="5M" />
+    </warn>
+
+    <error prefix="[ERROR]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="red" background="default" />
+        <rotate filename="error-%Y%m%d.%i.log" dir="./output/logs/" size="5M" />
+    </error>
+
+    <critical prefix="[CRITICAL]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="red" background="blue" />
+        <rotate filename="critical-%Y%m%d.%i.log" dir="./output/logs/" size="5M" />
+    </critical>
+</logs>
