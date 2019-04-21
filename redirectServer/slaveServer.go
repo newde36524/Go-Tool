@@ -20,7 +20,7 @@ import (
 type SlaveServer struct {
 	MasterConn       *net.TCPConn //主服务器连接
 	SlaveTCPListener *net.TCPListener
-	ConnList         []*net.TCPConn
+	ConnMap          map[string]*net.TCPConn
 }
 
 //NewSlaveServer 实例化一个SlaveServer
@@ -54,7 +54,7 @@ func (srv *SlaveServer) onConnection() {
 		if err != nil {
 			logs.Error(err)
 		} else {
-			srv.ConnList = append(srv.ConnList, conn)
+			srv.ConnMap[conn.RemoteAddr().String()] = conn
 			go srv.onSend(conn)
 		}
 	}
@@ -66,7 +66,8 @@ func (srv *SlaveServer) onSend(conn *net.TCPConn) { //业务服务器连接
 	for {
 		n, err := conn.Read(buffer) //读取业务服务器上发的数据并转发给主服务器
 		if err != nil {
-			logs.Error(err)
+			logs.Errorf("%s:%s", conn.RemoteAddr().String(), err)
+			delete(srv.ConnMap, conn.RemoteAddr().String())
 			break
 		}
 		srv.MasterConn.Write(buffer[:n])
@@ -80,10 +81,10 @@ func (srv *SlaveServer) onReceiv(conn *net.TCPConn) { //远程服务器连接
 	for {
 		n, err := conn.Read(buffer)
 		if err != nil {
-			logs.Error(err)
+			logs.Errorf("%s:%s", conn.RemoteAddr().String(), err)
 			break
 		}
-		for _, c := range srv.ConnList { //读取远程服务器发送的数据并转发给所有业务服务器
+		for _, c := range srv.ConnMap { //读取远程服务器发送的数据并转发给所有业务服务器
 			c.Write(buffer[:n])
 		}
 	}

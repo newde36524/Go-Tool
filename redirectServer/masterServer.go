@@ -9,7 +9,7 @@ import (
 //MasterServer 主转发服务器
 type MasterServer struct {
 	MasterServerTCPListener *net.TCPListener
-	ConnList                []*net.TCPConn
+	ConnMap                 map[string]*net.TCPConn
 }
 
 //NewMasterServer 实例化一个MasterServer
@@ -37,7 +37,7 @@ func (srv *MasterServer) onConnection() {
 		if err != nil {
 			logs.Error(err)
 		} else {
-			srv.ConnList = append(srv.ConnList, conn)
+			srv.ConnMap[conn.RemoteAddr().String()] = conn
 			go srv.onSend(conn)
 		}
 	}
@@ -49,14 +49,18 @@ func (srv *MasterServer) onSend(conn *net.TCPConn) { //业务服务器连接
 	for {
 		n, err := conn.Read(buffer) //读取业务服务器上发的数据并转发给其他业务服务器
 		if err != nil {
-			logs.Error(err)
+			logs.Errorf("%s:%s", conn.RemoteAddr().String(), err)
+			delete(srv.ConnMap, conn.RemoteAddr().String())
 			break
 		}
-		for _, c := range srv.ConnList {
+		for _, c := range srv.ConnMap {
 			if c.RemoteAddr().String() != conn.RemoteAddr().String() {
-				c.Write(buffer[:n])
+				_, err := c.Write(buffer[:n])
+				if err != nil {
+					logs.Error(err)
+				}
 			}
 		}
 	}
-	logs.Info("onSend exiting")
+	logs.Infof("onSend exiting")
 }
