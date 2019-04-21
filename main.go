@@ -4,14 +4,19 @@ import (
 	"fmt"
 	"time"
 
-	"./BulkRunTool"
 	"./arraytool"
+	"./bulkruntool"
 	middle "./middleware"
 )
 
 func main() {
-	TestMiddleware()
-	TestBulkRunFuncs()
+	// TestMiddleware()
+	// TestBulkRunFuncs()
+
+	mp := make(map[string]string, 1024)
+	mp[""] = "hehe"
+	fmt.Println(mp[""])
+
 	<-time.After(24 * time.Hour)
 }
 
@@ -42,45 +47,15 @@ func TestRevertArray() {
 }
 
 func TestBulkRunFuncs() {
-	fnArr := []func(){
-		func() {
-			fmt.Println("1")
-			time.Sleep(1 * time.Second)
-		},
-		func() {
-			fmt.Println("2")
-			time.Sleep(1 * time.Second)
-		},
-		func() {
-			fmt.Println("3")
-			time.Sleep(1 * time.Second)
-		},
-		func() {
-			fmt.Println("4")
-			time.Sleep(1 * time.Second)
-		},
-		func() {
-			fmt.Println("5")
-			time.Sleep(1 * time.Second)
-		},
-		func() {
-			fmt.Println("6")
-			time.Sleep(1 * time.Second)
-		},
-		func() {
-			fmt.Println("7")
-			time.Sleep(1 * time.Second)
-		},
-		func() {
-			fmt.Println("8")
-			time.Sleep(1 * time.Second)
-		},
-		func() {
-			fmt.Println("9")
-			time.Sleep(1 * time.Second)
-		},
+	fnArr := []func(){}
+	for index := 0; index < 10000; index++ {
+		temp := index
+		fnArr = append(fnArr, func() {
+			fmt.Println(temp)
+			time.Sleep(time.Second)
+		})
 	}
-	BulkRunTool.RunTask(3, fnArr)
+	bulkruntool.RunTask(2, fnArr)
 }
 
 func TestMiddleware() {
