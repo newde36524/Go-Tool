@@ -22,6 +22,7 @@ func NewMasterServer(localAddr *net.TCPAddr) (*MasterServer, error) {
 		return nil, err
 	}
 	server.MasterServerTCPListener = tcpListener
+	server.ConnMap = make(map[string]*net.TCPConn, 1024)
 	return server, err
 }
 

@@ -38,6 +38,7 @@ func NewSlaveServer(localAddr *net.TCPAddr, remoteAddr *net.TCPAddr) (*SlaveServ
 		return nil, err
 	}
 	server.SlaveTCPListener = tcpListener
+	server.ConnMap = make(map[string]*net.TCPConn, 1024)
 	return server, err
 }
 
