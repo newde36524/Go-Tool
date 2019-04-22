@@ -29,7 +29,7 @@ func ReadPagingFile(pagIndex int, pagSize int, filePath string) ([]byte, int, er
 		b, e := bufReader.ReadByte()
 		if e != nil {
 			if !isRemenberSize {
-				isRemenberSize = true
+				isRemenberSize = true //只记录一次
 				resultDataSize = i
 			}
 		}
@@ -38,10 +38,11 @@ func ReadPagingFile(pagIndex int, pagSize int, filePath string) ([]byte, int, er
 	return resultData, resultDataSize, nil
 }
 
-//获取文件大小
-func GetFileSize(filename string) int64 {
+// GetFileSize 获取文件大小
+// @filePath 文件路径
+func GetFileSize(filePath string) int64 {
 	var result int64
-	filepath.Walk(filename, func(path string, f os.FileInfo, err error) error {
+	filepath.Walk(filePath, func(path string, f os.FileInfo, err error) error {
 		result = f.Size()
 		return nil
 	})

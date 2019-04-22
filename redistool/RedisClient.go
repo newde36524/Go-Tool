@@ -2,12 +2,12 @@ package redistool
 
 import (
 	"crypto/tls"
-	"fmt"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
 
+//RedisClientOption Redis客户端配置项
 type RedisClientOption struct {
 	ReadTimeout    time.Duration
 	WriteTimeout   time.Duration
@@ -21,12 +21,15 @@ type RedisClientOption struct {
 	UseTLS         bool
 }
 
+//RedisClient Redis客户端
 type RedisClient struct {
 	c      redis.Conn
 	addr   string
 	option *RedisClientOption
 }
 
+//NewRedisClient 实例化Redis客户端新实例
+//@option Redis客户端配置
 func NewRedisClient(option *RedisClientOption) *RedisClient {
 	var result *RedisClient = &RedisClient{
 		option: option,
@@ -34,7 +37,8 @@ func NewRedisClient(option *RedisClientOption) *RedisClient {
 	return result
 }
 
-func (this *RedisClient) Connect(addr string) {
+//Connect 连接Redis服务器 "ip:port"
+func (this *RedisClient) Connect(addr string) error {
 	this.Close()
 	this.addr = addr
 	option := this.option
@@ -50,13 +54,11 @@ func (this *RedisClient) Connect(addr string) {
 		redis.DialTLSSkipVerify(option.TLSSkipVerify),
 		redis.DialUseTLS(option.UseTLS),
 	}...)
-	if err != nil {
-		fmt.Println("Connect to redis error:", err)
-		return
-	}
 	this.c = c
+	return err
 }
 
+//Close 关闭Redis客户端
 func (this *RedisClient) Close() error {
 	if this.c == nil {
 		return nil
