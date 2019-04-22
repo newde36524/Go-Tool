@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/issue9/logs"
 
 	"./arraytool"
+	"./bulkruntool"
 	middle "./middleware"
 )
 
@@ -16,7 +18,14 @@ func init() {
 	}
 }
 func main() {
-	TestMiddleware()
+	// TestMiddleware()
+	// TestBulkRunFuncs()
+
+	mp := make(map[string]string, 1024)
+	mp[""] = "hehe"
+	fmt.Println(mp[""])
+
+	<-time.After(24 * time.Hour)
 }
 
 // func ReadFile(index, pagnum int, filePath string) {
@@ -43,6 +52,18 @@ func main() {
 // }
 func TestRevertArray() {
 	fmt.Println(arraytool.RevertArray([]interface{}{0x1, 0x2, 0x3}))
+}
+
+func TestBulkRunFuncs() {
+	fnArr := []func(){}
+	for index := 0; index < 10000; index++ {
+		temp := index
+		fnArr = append(fnArr, func() {
+			fmt.Println(temp)
+			time.Sleep(time.Second)
+		})
+	}
+	bulkruntool.RunTask(2, fnArr)
 }
 
 func TestMiddleware() {
