@@ -59,31 +59,56 @@ func TestRedis() {
 	// res, err = client.Get("a")
 	// fmt.Println("Get", res, err)
 	//=============== PubSub ======================
-	// go func() {
-	// 	for {
-
-	// 	}
-	// }()
-	// client.Subscript(func(msg string) {
-	// 	fmt.Println(msg)
-	// }, "MyTopic")
-	// time.Sleep(1 * time.Second)
-	topic := "MyTopic"
-	c, _ := client.Clone()
-	go func(a *redistool.RedisClient, b redis.Conn) {
-		for {
-			a.Publish(topic, "hello world")
-			fmt.Println("1")
-			time.Sleep(time.Second)
-		}
-	}(client, c)
-	// fmt.Println(client.Publish(topic, "hello world"))
-	client.Subscript(func(msg interface{}) {
-		fmt.Println("666", msg)
-	}, topic)
+	{
+		// Pub(client.C, "MyTopic", "hello world")
+		// c2, _ := client.Clone()
+		// Sub(c2, "MyTopic")
+	}
+	{
+		go func() {
+			for {
+				client.Publish("MyTopic", "hello world")
+				<-time.After(time.Second)
+			}
+		}()
+		c2, _ := client.Clone()
+		Sub(c2, "MyTopic")
+		// client.Subscript(func(msg string) {
+		// 	fmt.Println(msg)
+		// }, "MyTopic")
+	}
 	<-time.After(time.Hour)
-
 }
+
+func Pub(c redis.Conn, topic string, msg string) {
+	go func(conn redis.Conn) {
+		for {
+			conn.Do("PUBLISH", topic, msg)
+			conn.Flush()
+			<-time.After(time.Second)
+		}
+	}(c)
+}
+
+func Sub(c redis.Conn, topic string) {
+	psc := redis.PubSubConn{Conn: c}
+	psc.Subscribe(topic)
+
+	go func(psc *redis.PubSubConn) {
+		for {
+			switch v := psc.Receive().(type) {
+			case redis.Message:
+				fmt.Println(string(v.Data))
+			case redis.Subscription:
+				fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+			case error:
+				fmt.Println(v)
+				psc.Close()
+			}
+		}
+	}(&psc)
+}
+
 func TestRevertArray() {
 	fmt.Println(arraytool.RevertArray([]interface{}{0x1, 0x2, 0x3}))
 }
