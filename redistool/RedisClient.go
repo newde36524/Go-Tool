@@ -2,7 +2,10 @@ package redistool
 
 import (
 	"crypto/tls"
+	"fmt"
 	"time"
+
+	"github.com/issue9/logs"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -38,11 +41,22 @@ func NewRedisClient(option *RedisClientOption) *RedisClient {
 }
 
 //Connect 连接Redis服务器 "ip:port"
-func (this *RedisClient) Connect(addr string) error {
-	this.Close()
-	this.addr = addr
-	option := this.option
-	c, err := redis.Dial("tcp", this.addr, []redis.DialOption{
+func (redisClient *RedisClient) Connect(addr string) error {
+	redisClient.Close()
+	redisClient.addr = addr
+	conn, err := redisClient.Clone()
+	if err != nil {
+		logs.Error(err)
+	}
+	redisClient.c = conn
+	return err
+}
+func (redisClient *RedisClient) Clone() (redis.Conn, error) {
+	if redisClient.addr == "" {
+		panic("服务端地址不能为空")
+	}
+	option := redisClient.option
+	return redis.Dial("tcp", redisClient.addr, []redis.DialOption{
 		redis.DialReadTimeout(option.ReadTimeout),
 		redis.DialWriteTimeout(option.WriteTimeout),
 		redis.DialConnectTimeout(option.ConnectTimeout),
@@ -54,45 +68,82 @@ func (this *RedisClient) Connect(addr string) error {
 		redis.DialTLSSkipVerify(option.TLSSkipVerify),
 		redis.DialUseTLS(option.UseTLS),
 	}...)
-	this.c = c
-	return err
 }
 
 //Close 关闭Redis客户端
-func (this *RedisClient) Close() error {
-	if this.c == nil {
+func (redisClient *RedisClient) Close() error {
+	if redisClient.c == nil {
 		return nil
 	}
-	return this.c.Close()
+	return redisClient.c.Close()
 }
-func (this *RedisClient) Set(key, value string) (string, error) {
-	return redis.String(this.c.Do("SET", key, value))
+func (redisClient *RedisClient) Set(key, value string) (string, error) {
+	return redis.String(redisClient.c.Do("SET", key, value))
 }
-func (this *RedisClient) Get(key string) (string, error) {
-	return redis.String(this.c.Do("GET", key))
+func (redisClient *RedisClient) Get(key string) (string, error) {
+	return redis.String(redisClient.c.Do("GET", key))
 }
-func (this *RedisClient) HSet(hash, key, value string) (int64, error) {
-	return redis.Int64(this.c.Do("HSET", hash, key, value))
+func (redisClient *RedisClient) HSet(hash, key, value string) (int64, error) {
+	return redis.Int64(redisClient.c.Do("HSET", hash, key, value))
 }
-func (this *RedisClient) HGet(hash, key string) (string, error) {
-	return redis.String(this.c.Do("HGET", hash, key))
+func (redisClient *RedisClient) HGet(hash, key string) (string, error) {
+	return redis.String(redisClient.c.Do("HGET", hash, key))
 }
 
 //自1.0.0起可用.
 //时间复杂度:O(1)
 //删除并返回存储在列表中的第一个元素key
-func (this *RedisClient) LPop(listName string) (string, error) {
-	return redis.String(this.c.Do("LPOP", listName))
+func (redisClient *RedisClient) LPop(listName string) (string, error) {
+	return redis.String(redisClient.c.Do("LPOP", listName))
 }
-func (this *RedisClient) LPush(listName, value string) (int, error) {
-	return redis.Int(this.c.Do("LPUSH", listName, value))
+func (redisClient *RedisClient) LPush(listName, value string) (int, error) {
+	return redis.Int(redisClient.c.Do("LPUSH", listName, value))
 }
-func (this *RedisClient) LRange(listName string, startIndex, endIndex int) ([]string, error) {
-	return redis.Strings(this.c.Do("LRANGE", listName, startIndex, endIndex))
+func (redisClient *RedisClient) LRange(listName string, startIndex, endIndex int) ([]string, error) {
+	return redis.Strings(redisClient.c.Do("LRANGE", listName, startIndex, endIndex))
 }
-func (this *RedisClient) RPop(listName string) (string, error) {
-	return redis.String(this.c.Do("RPOP", listName))
+func (redisClient *RedisClient) RPop(listName string) (string, error) {
+	return redis.String(redisClient.c.Do("RPOP", listName))
 }
-func (this *RedisClient) RPush(listName, value string) (int, error) {
-	return redis.Int(this.c.Do("RPUSH", listName, value))
+func (redisClient *RedisClient) RPush(listName, value string) (int, error) {
+	return redis.Int(redisClient.c.Do("RPUSH", listName, value))
 }
+
+func (redisClient *RedisClient) Exists(key string) (bool, error) {
+	return redis.Bool(redisClient.c.Do("EXISTS", key))
+}
+
+//发布
+func (redisClient *RedisClient) Publish(channelName, msg string) {
+	redisClient.c.Do("PUBLISH", channelName, msg)
+	redisClient.c.Flush()
+}
+
+//订阅
+func (redisClient *RedisClient) Subscript(onMessage func(msg interface{}), channels ...interface{}) {
+	conn, err := redisClient.Clone()
+	if err != nil {
+		logs.Error(err)
+	}
+	psc := redis.PubSubConn{Conn: conn}
+	psc.Subscribe(channels)
+
+	go func(psc *redis.PubSubConn) {
+		for {
+			switch v := psc.Receive().(type) {
+			case redis.Message:
+				onMessage(v)
+				fmt.Printf("%s: message: %s\n", v.Channel, v.Data)
+			case redis.Subscription:
+				fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+			case error:
+				fmt.Println(v)
+				psc.Close()
+			}
+		}
+	}(&psc)
+}
+
+// func (redisClient *RedisClient) UnSubscribt() {
+
+// }

@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
+	"runtime/debug"
 	"time"
 
-	"github.com/issue9/logs"
+	"github.com/gomodule/redigo/redis"
 
 	"./arraytool"
 	"./bulkruntool"
 	middle "./middleware"
+	"./redistool"
+	"github.com/issue9/logs"
 )
 
 func init() {
@@ -20,12 +23,10 @@ func init() {
 func main() {
 	// TestMiddleware()
 	// TestBulkRunFuncs()
-
-	mp := make(map[string]string, 1024)
-	mp[""] = "hehe"
-	fmt.Println(mp[""])
-
-	<-time.After(24 * time.Hour)
+	TestRedis()
+	for {
+		<-time.After(24 * time.Hour)
+	}
 }
 
 // func ReadFile(index, pagnum int, filePath string) {
@@ -36,20 +37,53 @@ func main() {
 // 	fmt.Println(data)
 // }
 
-// func TestRedis() {
-// 	client := new(redistool.RedisClient)
-// 	fmt.Println("连接redis服务端")
+func TestRedis() {
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Error(err)
+			debug.PrintStack()
+		}
+	}()
+	client := redistool.NewRedisClient(&redistool.RedisClientOption{
+		// Password: "pCy1@nr#86z12%v",
+	})
+	err := client.Connect("127.0.0.1:6379")
+	// err := client.Connect("10.66.178.38:6379")
+	if err != nil {
+		logs.Error(err)
+	}
+	fmt.Println("连接redis服务端")
+	//=============== Set ======================
+	// res, err := client.Set("a", "hello")
+	// fmt.Println("Set", res, err)
+	// res, err = client.Get("a")
+	// fmt.Println("Get", res, err)
+	//=============== PubSub ======================
+	// go func() {
+	// 	for {
 
-// 	client.Login("ip:port", &redistool.RedisClientOption{
-// 		Password: "password",
-// 	})
+	// 	}
+	// }()
+	// client.Subscript(func(msg string) {
+	// 	fmt.Println(msg)
+	// }, "MyTopic")
+	// time.Sleep(1 * time.Second)
+	topic := "MyTopic"
+	c, _ := client.Clone()
+	go func(a *redistool.RedisClient, b redis.Conn) {
+		for {
+			a.Publish(topic, "hello world")
+			fmt.Println("1")
+			time.Sleep(time.Second)
+		}
+	}(client, c)
+	// fmt.Println(client.Publish(topic, "hello world"))
+	client.Subscript(func(msg interface{}) {
+		fmt.Println("666", msg)
+	}, topic)
+	<-time.After(time.Hour)
 
-// 	res, err := client.Set("a", "hello")
-// 	fmt.Println("Set", res, err)
-
-// 	res, err = client.Get("a")
-// 	fmt.Println("Get", res, err)
-// }
+}
 func TestRevertArray() {
 	fmt.Println(arraytool.RevertArray([]interface{}{0x1, 0x2, 0x3}))
 }
