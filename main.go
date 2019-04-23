@@ -21,7 +21,8 @@ func init() {
 func main() {
 	// TestMiddleware()
 	// TestBulkRunFuncs()
-	TestRedis()
+	// TestRedis()
+	TestMiddleware2()
 	for {
 		<-time.After(24 * time.Hour)
 	}
@@ -115,4 +116,23 @@ func MiddlewareC(middleware middle.Middleware) middle.Middleware {
 		middleware(o)
 		logs.Info("C2")
 	}
+}
+func TestMiddleware2() {
+	middleware := new(middle.Middleware2)
+	middleware.Use(func(next func()) {
+		fmt.Println("A1")
+		next()
+		fmt.Println("A2")
+	})
+	middleware.Use(func(next func()) {
+		fmt.Println("B1")
+		next()
+		fmt.Println("B2")
+	})
+	middleware.Use(func(next func()) {
+		fmt.Println("C1")
+		next()
+		fmt.Println("C2")
+	})
+	middleware.Invoke()
 }
