@@ -10,10 +10,9 @@ import (
 
 func main() {
 	client := redistool.NewRedisClient(&redistool.RedisClientOption{
-		// Password: "pCy1@nr#86z12%v",
+		// Password: "123456",
 	})
 	err := client.Connect("127.0.0.1:6379")
-	// err := client.Connect("10.66.178.38:6379")
 	if err != nil {
 		logs.Error(err)
 	}
