@@ -120,32 +120,24 @@ func (redisClient *RedisClient) Publish(channelName, msg string) {
 }
 
 //订阅
-func (redisClient *RedisClient) Subscript(onMessage func(msg string), channels ...interface{}) {
-	Sub := func(c redis.Conn, topics ...interface{}) {
-		psc := redis.PubSubConn{Conn: c}
-		psc.Subscribe(topics)
-
-		go func(psc *redis.PubSubConn) {
-			for {
-				switch v := psc.Receive().(type) {
-				case redis.Message:
-					fmt.Println(string(v.Data))
-				case redis.Subscription:
-					fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
-				case error:
-					fmt.Println(v)
-					psc.Close()
-				}
-			}
-		}(&psc)
-	}
+func (redisClient *RedisClient) Subscript(onMessage func(string), channel string) {
 	conn, err := redisClient.Clone()
 	if err != nil {
 		logs.Error(err)
 	}
-	Sub(conn, channels)
+	psc := redis.PubSubConn{Conn: conn}
+	psc.Subscribe(channel)
+	go func(psc *redis.PubSubConn) {
+		for {
+			switch v := psc.Receive().(type) {
+			case redis.Message:
+				onMessage(string(v.Data))
+			case redis.Subscription:
+				fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+			case error:
+				fmt.Println(v)
+				psc.Close()
+			}
+		}
+	}(&psc)
 }
-
-// func (redisClient *RedisClient) UnSubscribt() {
-
-// }

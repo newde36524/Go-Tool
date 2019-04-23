@@ -5,8 +5,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
-
 	"./arraytool"
 	"./bulkruntool"
 	middle "./middleware"
@@ -45,68 +43,30 @@ func TestRedis() {
 		}
 	}()
 	client := redistool.NewRedisClient(&redistool.RedisClientOption{
-		// Password: "pCy1@nr#86z12%v",
+		// Password: "123456",
 	})
 	err := client.Connect("127.0.0.1:6379")
-	// err := client.Connect("10.66.178.38:6379")
 	if err != nil {
 		logs.Error(err)
 	}
 	fmt.Println("连接redis服务端")
 	//=============== Set ======================
-	// res, err := client.Set("a", "hello")
-	// fmt.Println("Set", res, err)
-	// res, err = client.Get("a")
-	// fmt.Println("Get", res, err)
+	res, err := client.Set("a", "hello")
+	fmt.Println("Set", res, err)
+	res, err = client.Get("a")
+	fmt.Println("Get", res, err)
 	//=============== PubSub ======================
-	{
-		// Pub(client.C, "MyTopic", "hello world")
-		// c2, _ := client.Clone()
-		// Sub(c2, "MyTopic")
-	}
-	{
-		go func() {
-			for {
-				client.Publish("MyTopic", "hello world")
-				<-time.After(time.Second)
-			}
-		}()
-		c2, _ := client.Clone()
-		Sub(c2, "MyTopic")
-		// client.Subscript(func(msg string) {
-		// 	fmt.Println(msg)
-		// }, "MyTopic")
-	}
-	<-time.After(time.Hour)
-}
-
-func Pub(c redis.Conn, topic string, msg string) {
-	go func(conn redis.Conn) {
+	client.Publish("MyTopic", "hello world")
+	go func() {
 		for {
-			conn.Do("PUBLISH", topic, msg)
-			conn.Flush()
+			client.Publish("MyTopic", "hello world")
 			<-time.After(time.Second)
 		}
-	}(c)
-}
-
-func Sub(c redis.Conn, topic string) {
-	psc := redis.PubSubConn{Conn: c}
-	psc.Subscribe(topic)
-
-	go func(psc *redis.PubSubConn) {
-		for {
-			switch v := psc.Receive().(type) {
-			case redis.Message:
-				fmt.Println(string(v.Data))
-			case redis.Subscription:
-				fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
-			case error:
-				fmt.Println(v)
-				psc.Close()
-			}
-		}
-	}(&psc)
+	}()
+	client.Subscript(func(msg string) {
+		fmt.Println(msg)
+	}, "MyTopic")
+	<-time.After(time.Hour)
 }
 
 func TestRevertArray() {
