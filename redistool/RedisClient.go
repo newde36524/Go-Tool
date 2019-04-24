@@ -137,7 +137,7 @@ func (redisClient *RedisClient) Subscript(onMessage func(string), channel string
 			case error:
 				fmt.Println(v)
 				psc.Close()
-				break
+				return
 			}
 		}
 	}(&psc)
