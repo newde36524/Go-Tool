@@ -1,23 +1,24 @@
 package redirectServer
 
+import "net"
+
 //BaseServer 服务端接口
 type BaseServer interface {
-	Run()           //启动监听端口
-	OnMessage()     //处理消息
-	OnSendPackage() //发送消息
-	OnReceiv()      //接收消息
+	Start() //启动监听端口
 }
 
-type ServerManage struct {
-}
-
-func (*ServerManage) CreateServer(isMaster bool) BaseServer {
-	if isMaster {
-
-	} else {
-
+//NewRedirectServer 创建一个中转服务器
+//@localAddr 本机地址
+//@remoteAddr 远程地址
+//备注: 本机地址不能为nil，远程地址如果为nil，则定义为主服务器，否则定义为从服务器
+func NewRedirectServer(localAddr, remoteAddr *net.TCPAddr) (server BaseServer, err error) {
+	if localAddr == nil {
+		panic("本机地址不能为空")
 	}
-	return nil
+	if remoteAddr == nil {
+		server, err = NewMasterServer(localAddr)
+	} else {
+		server, err = NewSlaveServer(localAddr, remoteAddr)
+	}
+	return
 }
-
-type Key string
