@@ -35,6 +35,7 @@ func (t *Task) Start(fn func()) {
 				ch <- 1
 			}(_task.ch, f)
 		}
+		close(_task.ch)
 	}(t)
 }
 
