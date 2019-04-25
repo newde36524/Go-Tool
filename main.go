@@ -172,4 +172,15 @@ func TestTask() {
 	}).Continue(func() {
 		fmt.Println("4")
 	})
+
+	task := task.Run(func() {
+		fmt.Println("666")
+	})
+	for index := 0; index < 100; index++ {
+		temp := index
+		task = task.Continue(func() {
+			fmt.Println(temp)
+		})
+	}
+
 }
