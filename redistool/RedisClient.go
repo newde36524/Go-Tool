@@ -2,7 +2,6 @@ package redistool
 
 import (
 	"crypto/tls"
-	"fmt"
 	"time"
 
 	"github.com/issue9/logs"
@@ -26,7 +25,7 @@ type RedisClientOption struct {
 
 //RedisClient Redis客户端
 type RedisClient struct {
-	C      redis.Conn
+	c      redis.Conn
 	addr   string
 	option *RedisClientOption
 }
@@ -42,16 +41,28 @@ func NewRedisClient(option *RedisClientOption) *RedisClient {
 
 //Connect 连接Redis服务器 "ip:port"
 func (redisClient *RedisClient) Connect(addr string) error {
-	redisClient.Close()
+	redisClient.Close() //可关闭旧连接，连接新地址
 	redisClient.addr = addr
 	conn, err := redisClient.Clone()
 	if err != nil {
 		logs.Error(err)
 	}
-	redisClient.C = conn
+	redisClient.c = conn.c
 	return err
 }
-func (redisClient *RedisClient) Clone() (redis.Conn, error) {
+
+//Clone 相同的配置创建一个新的RedisClient实例
+func (redisClient *RedisClient) Clone() (*RedisClient, error) {
+	conn, err := redisClient.create()
+	if err != nil {
+		return nil, err
+	}
+	redisClient.c = conn
+	return redisClient, err
+}
+
+//create 用相同的配置创建一个新的redis连接
+func (redisClient *RedisClient) create() (redis.Conn, error) {
 	if redisClient.addr == "" {
 		panic("服务端地址不能为空")
 	}
@@ -72,56 +83,65 @@ func (redisClient *RedisClient) Clone() (redis.Conn, error) {
 
 //Close 关闭Redis客户端
 func (redisClient *RedisClient) Close() error {
-	if redisClient.C == nil {
+	if redisClient.c == nil {
 		return nil
 	}
-	return redisClient.C.Close()
+	return redisClient.c.Close()
 }
+
+//Set 设置一个键值对
 func (redisClient *RedisClient) Set(key, value string) (string, error) {
-	return redis.String(redisClient.C.Do("SET", key, value))
+	return redis.String(redisClient.c.Do("SET", key, value))
 }
+
+//Get 获取一个键值
 func (redisClient *RedisClient) Get(key string) (string, error) {
-	return redis.String(redisClient.C.Do("GET", key))
+	return redis.String(redisClient.c.Do("GET", key))
 }
+
+//HSet 设置一个哈希映射的键值对
 func (redisClient *RedisClient) HSet(hash, key, value string) (int64, error) {
-	return redis.Int64(redisClient.C.Do("HSET", hash, key, value))
+	return redis.Int64(redisClient.c.Do("HSET", hash, key, value))
 }
+
+//HGet 获取一个哈希映射的键值
 func (redisClient *RedisClient) HGet(hash, key string) (string, error) {
-	return redis.String(redisClient.C.Do("HGET", hash, key))
+	return redis.String(redisClient.c.Do("HGET", hash, key))
 }
 
 //自1.0.0起可用.
 //时间复杂度:O(1)
 //删除并返回存储在列表中的第一个元素key
 func (redisClient *RedisClient) LPop(listName string) (string, error) {
-	return redis.String(redisClient.C.Do("LPOP", listName))
+	return redis.String(redisClient.c.Do("LPOP", listName))
 }
 func (redisClient *RedisClient) LPush(listName, value string) (int, error) {
-	return redis.Int(redisClient.C.Do("LPUSH", listName, value))
+	return redis.Int(redisClient.c.Do("LPUSH", listName, value))
 }
 func (redisClient *RedisClient) LRange(listName string, startIndex, endIndex int) ([]string, error) {
-	return redis.Strings(redisClient.C.Do("LRANGE", listName, startIndex, endIndex))
+	return redis.Strings(redisClient.c.Do("LRANGE", listName, startIndex, endIndex))
 }
 func (redisClient *RedisClient) RPop(listName string) (string, error) {
-	return redis.String(redisClient.C.Do("RPOP", listName))
+	return redis.String(redisClient.c.Do("RPOP", listName))
 }
 func (redisClient *RedisClient) RPush(listName, value string) (int, error) {
-	return redis.Int(redisClient.C.Do("RPUSH", listName, value))
+	return redis.Int(redisClient.c.Do("RPUSH", listName, value))
 }
 
+//Exists 是否存在
 func (redisClient *RedisClient) Exists(key string) (bool, error) {
-	return redis.Bool(redisClient.C.Do("EXISTS", key))
+	return redis.Bool(redisClient.c.Do("EXISTS", key))
 }
 
-//发布
+//Publish 发布
 func (redisClient *RedisClient) Publish(channelName, msg string) {
-	redisClient.C.Do("PUBLISH", channelName, msg)
-	redisClient.C.Flush()
+	redisClient.c.Do("PUBLISH", channelName, msg)
+	redisClient.c.Flush()
 }
 
-//订阅
+//Subscript 订阅
 func (redisClient *RedisClient) Subscript(onMessage func(string), channel string) {
-	conn, err := redisClient.Clone()
+	conn, err := redisClient.create()
 	if err != nil {
 		logs.Error(err)
 	}
@@ -133,10 +153,35 @@ func (redisClient *RedisClient) Subscript(onMessage func(string), channel string
 			case redis.Message:
 				onMessage(string(v.Data))
 			case redis.Subscription:
-				fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+				logs.Infof("%s: %s %d\n", v.Channel, v.Kind, v.Count)
 			case error:
-				fmt.Println(v)
+				logs.Error(v)
 				psc.Close()
+				return
+			}
+		}
+	}(&psc)
+}
+
+//Subscript2 订阅
+func (redisClient *RedisClient) Subscript2(onMessage func(string), channel string, onError func(err error)) {
+	conn, err := redisClient.create()
+	if err != nil {
+		logs.Error(err)
+	}
+	psc := redis.PubSubConn{Conn: conn}
+	psc.Subscribe(channel)
+	go func(psc *redis.PubSubConn) {
+		for {
+			switch v := psc.Receive().(type) {
+			case redis.Message:
+				onMessage(string(v.Data))
+			case redis.Subscription:
+				logs.Infof("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+			case error:
+				onError(v)
+				psc.Close()
+				return
 			}
 		}
 	}(&psc)

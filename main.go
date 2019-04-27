@@ -9,6 +9,7 @@ import (
 	"./bulkruntool"
 	middle "./middleware"
 	"./redistool"
+	"./task"
 	"github.com/issue9/logs"
 )
 
@@ -22,9 +23,9 @@ func main() {
 	// TestMiddleware()
 	// TestBulkRunFuncs()
 	// TestRedis()
-	TestMiddleware2()
-	TestMiddleware3()
-
+	// TestMiddleware2()
+	// TestMiddleware3()
+	TestTask()
 	for {
 		<-time.After(24 * time.Hour)
 	}
@@ -159,4 +160,27 @@ func TestMiddleware3() {
 		fmt.Println("C2")
 	})
 	middleware.Invoke(111)
+}
+
+func TestTask() {
+	task.Run(func() {
+		fmt.Println("1")
+	}).Continue(func() {
+		fmt.Println("2")
+	}).Continue(func() {
+		fmt.Println("3")
+	}).Continue(func() {
+		fmt.Println("4")
+	})
+
+	task := task.Run(func() {
+		fmt.Println("666")
+	})
+	for index := 0; index < 100; index++ {
+		temp := index
+		task = task.Continue(func() {
+			fmt.Println(temp)
+		})
+	}
+
 }
