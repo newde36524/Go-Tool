@@ -22,6 +22,7 @@ func init() {
 func main() {
 	// TestMiddleware()
 	// TestBulkRunFuncs()
+	// TestBulkRunFuncs2()
 	// TestRedis()
 	// TestMiddleware2()
 	// TestMiddleware3()
@@ -86,7 +87,20 @@ func TestBulkRunFuncs() {
 			time.Sleep(time.Second)
 		})
 	}
+
 	bulkruntool.RunTask(2, fnArr)
+}
+
+func TestBulkRunFuncs2() {
+	ch := bulkruntool.CreateBulkRunFuncChannel(10, 10000)
+	for index := 0; index < 10000; index++ {
+		temp := index
+		ch <- func() {
+			fmt.Println(temp)
+			time.Sleep(time.Second)
+		}
+	}
+
 }
 
 func TestMiddleware() {
