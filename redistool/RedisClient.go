@@ -141,30 +141,11 @@ func (redisClient *RedisClient) Publish(channelName, msg string) {
 
 //Subscript 订阅
 func (redisClient *RedisClient) Subscript(onMessage func(string), channel string) {
-	conn, err := redisClient.create()
-	if err != nil {
-		logs.Error(err)
-	}
-	psc := redis.PubSubConn{Conn: conn}
-	psc.Subscribe(channel)
-	go func(psc *redis.PubSubConn) {
-		for {
-			switch v := psc.Receive().(type) {
-			case redis.Message:
-				onMessage(string(v.Data))
-			case redis.Subscription:
-				logs.Infof("%s: %s %d\n", v.Channel, v.Kind, v.Count)
-			case error:
-				logs.Error(v)
-				psc.Close()
-				return
-			}
-		}
-	}(&psc)
+	redisClient.Subscript2(onMessage, channel, nil)
 }
 
 //Subscript2 订阅
-func (redisClient *RedisClient) Subscript2(onMessage func(string), channel string, onError func(err error)) {
+func (redisClient *RedisClient) Subscript2(onMessage func(string), channel string, onError func(error)) {
 	conn, err := redisClient.create()
 	if err != nil {
 		logs.Error(err)
@@ -179,7 +160,9 @@ func (redisClient *RedisClient) Subscript2(onMessage func(string), channel strin
 			case redis.Subscription:
 				logs.Infof("%s: %s %d\n", v.Channel, v.Kind, v.Count)
 			case error:
-				onError(v)
+				if onError != nil {
+					onError(v)
+				}
 				psc.Close()
 				return
 			}
