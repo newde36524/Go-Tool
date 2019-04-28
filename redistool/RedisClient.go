@@ -33,10 +33,9 @@ type RedisClient struct {
 //NewRedisClient 实例化Redis客户端新实例
 //@option Redis客户端配置
 func NewRedisClient(option *RedisClientOption) *RedisClient {
-	var result *RedisClient = &RedisClient{
+	return &RedisClient{
 		option: option,
 	}
-	return result
 }
 
 //Connect 连接Redis服务器 "ip:port"
@@ -109,21 +108,29 @@ func (redisClient *RedisClient) HGet(hash, key string) (string, error) {
 	return redis.String(redisClient.c.Do("HGET", hash, key))
 }
 
-//自1.0.0起可用.
+//LPop 自1.0.0起可用.
 //时间复杂度:O(1)
 //删除并返回存储在列表中的第一个元素key
 func (redisClient *RedisClient) LPop(listName string) (string, error) {
 	return redis.String(redisClient.c.Do("LPOP", listName))
 }
+
+//LPush .
 func (redisClient *RedisClient) LPush(listName, value string) (int, error) {
 	return redis.Int(redisClient.c.Do("LPUSH", listName, value))
 }
+
+//LRange .
 func (redisClient *RedisClient) LRange(listName string, startIndex, endIndex int) ([]string, error) {
 	return redis.Strings(redisClient.c.Do("LRANGE", listName, startIndex, endIndex))
 }
+
+//RPop .
 func (redisClient *RedisClient) RPop(listName string) (string, error) {
 	return redis.String(redisClient.c.Do("RPOP", listName))
 }
+
+//RPush .
 func (redisClient *RedisClient) RPush(listName, value string) (int, error) {
 	return redis.Int(redisClient.c.Do("RPUSH", listName, value))
 }
@@ -134,38 +141,45 @@ func (redisClient *RedisClient) Exists(key string) (bool, error) {
 }
 
 //Publish 发布
-func (redisClient *RedisClient) Publish(channelName, msg string) {
-	redisClient.c.Do("PUBLISH", channelName, msg)
-	redisClient.c.Flush()
+func (redisClient *RedisClient) Publish(channelName, msg string) (int, error) {
+	reply, err := redisClient.c.Do("PUBLISH", channelName, msg)
+	if err != nil {
+		return redis.Int(reply, err)
+	}
+	err = redisClient.c.Flush()
+	return redis.Int(reply, err)
 }
 
 //Subscript 订阅
-func (redisClient *RedisClient) Subscript(onMessage func(string), channel string) {
-	redisClient.Subscript2(onMessage, channel, nil)
+func (redisClient *RedisClient) Subscript(onMessage func(string), channel string) error {
+	return redisClient.Subscript2(onMessage, channel, nil)
 }
 
 //Subscript2 订阅
-func (redisClient *RedisClient) Subscript2(onMessage func(string), channel string, onError func(error)) {
+func (redisClient *RedisClient) Subscript2(onMessage func(string), channel string, onError func(error)) error {
 	conn, err := redisClient.create()
 	if err != nil {
-		logs.Error(err)
+		return err
 	}
 	psc := redis.PubSubConn{Conn: conn}
-	psc.Subscribe(channel)
-	go func(psc *redis.PubSubConn) {
-		for {
-			switch v := psc.Receive().(type) {
-			case redis.Message:
-				onMessage(string(v.Data))
-			case redis.Subscription:
-				logs.Infof("%s: %s %d\n", v.Channel, v.Kind, v.Count)
-			case error:
-				if onError != nil {
-					onError(v)
+	err = psc.Subscribe(channel)
+	if err == nil {
+		go func(psc *redis.PubSubConn) {
+			for {
+				switch v := psc.Receive().(type) {
+				case redis.Message:
+					onMessage(string(v.Data))
+				case redis.Subscription:
+					logs.Infof("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+				case error:
+					if onError != nil {
+						onError(v)
+					}
+					psc.Close()
+					return
 				}
-				psc.Close()
-				return
 			}
-		}
-	}(&psc)
+		}(&psc)
+	}
+	return err
 }

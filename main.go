@@ -22,24 +22,17 @@ func init() {
 func main() {
 	// TestMiddleware()
 	// TestBulkRunFuncs()
-	// TestBulkRunFuncs2()
+	TestBulkRunFuncs2()
 	// TestRedis()
 	// TestMiddleware2()
 	// TestMiddleware3()
-	TestTask()
+	// TestTask()
 	for {
 		<-time.After(24 * time.Hour)
 	}
 }
 
-// func ReadFile(index, pagnum int, filePath string) {
-// 	data, err := filetool.ReadPagingFile(index, pagnum, filePath)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	fmt.Println(data)
-// }
-
+//TestRedis .
 func TestRedis() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -74,10 +67,12 @@ func TestRedis() {
 	<-time.After(time.Hour)
 }
 
+//TestRevertArray .
 func TestRevertArray() {
 	fmt.Println(arraytool.RevertArray([]interface{}{0x1, 0x2, 0x3}))
 }
 
+//TestBulkRunFuncs .
 func TestBulkRunFuncs() {
 	fnArr := []func(){}
 	for index := 0; index < 10000; index++ {
@@ -91,6 +86,7 @@ func TestBulkRunFuncs() {
 	bulkruntool.RunTask(2, fnArr)
 }
 
+//TestBulkRunFuncs2 .
 func TestBulkRunFuncs2() {
 	ch := bulkruntool.CreateBulkRunFuncChannel(10, 10000)
 	for index := 0; index < 10000; index++ {
@@ -103,6 +99,7 @@ func TestBulkRunFuncs2() {
 
 }
 
+//TestMiddleware .
 func TestMiddleware() {
 	app := middle.NewApplication()
 	app.Use(MiddlewareA)
@@ -113,6 +110,7 @@ func TestMiddleware() {
 	// middleware(1)
 }
 
+//MiddlewareA .
 func MiddlewareA(middleware middle.Middleware) middle.Middleware {
 	return func(o interface{}) {
 		logs.Info("A1")
@@ -120,6 +118,8 @@ func MiddlewareA(middleware middle.Middleware) middle.Middleware {
 		logs.Info("A2")
 	}
 }
+
+//MiddlewareB .
 func MiddlewareB(middleware middle.Middleware) middle.Middleware {
 	return func(o interface{}) {
 		logs.Info("B1")
@@ -127,6 +127,8 @@ func MiddlewareB(middleware middle.Middleware) middle.Middleware {
 		logs.Info("B2")
 	}
 }
+
+//MiddlewareC .
 func MiddlewareC(middleware middle.Middleware) middle.Middleware {
 	return func(o interface{}) {
 		logs.Info("C1")
@@ -134,6 +136,8 @@ func MiddlewareC(middleware middle.Middleware) middle.Middleware {
 		logs.Info("C2")
 	}
 }
+
+//TestMiddleware2 .
 func TestMiddleware2() {
 	middleware := new(middle.Middleware2)
 	middleware.Use(func(next func()) {
@@ -153,6 +157,8 @@ func TestMiddleware2() {
 	})
 	middleware.Invoke()
 }
+
+//TestMiddleware3 .
 func TestMiddleware3() {
 	middleware := new(middle.Middleware3)
 	middleware.Use(func(o interface{}, next func()) {
@@ -176,6 +182,7 @@ func TestMiddleware3() {
 	middleware.Invoke(111)
 }
 
+//TestTask .
 func TestTask() {
 	task.Run(func() {
 		fmt.Println("1")
