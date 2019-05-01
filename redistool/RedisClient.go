@@ -2,6 +2,7 @@ package redistool
 
 import (
 	"crypto/tls"
+	"fmt"
 	"time"
 
 	"github.com/issue9/logs"
@@ -83,7 +84,7 @@ func (redisClient *RedisClient) create() (redis.Conn, error) {
 //Close 关闭Redis客户端
 func (redisClient *RedisClient) Close() error {
 	if redisClient.c == nil {
-		return nil
+		return fmt.Errorf("Close: 连接对象为空")
 	}
 	return redisClient.c.Close()
 }
