@@ -29,7 +29,7 @@ func RunTask2(maxTaskCount int, funcs <-chan func()) {
 
 //CreateBulkRunFuncChannel 创建一个指定并行数量处理的方法通道
 func CreateBulkRunFuncChannel(maxTaskCount, maxFuncCount int) (funcs chan func()) {
-	funcs = make(chan func(), maxTaskCount)
+	funcs = make(chan func(), maxFuncCount)
 	ch := make(chan int, maxTaskCount)
 	go func(funcs chan func(), ch chan int) {
 		defer close(funcs)
