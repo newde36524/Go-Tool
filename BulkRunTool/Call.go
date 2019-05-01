@@ -2,10 +2,10 @@ package bulkruntool
 
 //RunTask 运行指定数量的协程执行多个方法
 func RunTask(maxTaskCount int, funcs []func()) {
-	ch := make(chan int, maxTaskCount)
+	ch := make(chan struct{}, maxTaskCount)
 	defer close(ch)
 	for _, fn := range funcs {
-		ch <- 1
+		ch <- struct{}{}
 		go func(f func()) {
 			f()
 			<-ch
@@ -15,11 +15,11 @@ func RunTask(maxTaskCount int, funcs []func()) {
 
 //RunTask2 运行指定数量的协程执行多个方法
 func RunTask2(maxTaskCount int, funcs <-chan func()) {
-	ch := make(chan int, maxTaskCount)
+	ch := make(chan struct{}, maxTaskCount)
 	defer close(ch)
 	for len(funcs) > 0 {
 		fn := <-funcs
-		ch <- 1
+		ch <- struct{}{}
 		go func(f func()) {
 			f()
 			<-ch
@@ -27,11 +27,11 @@ func RunTask2(maxTaskCount int, funcs <-chan func()) {
 	}
 }
 
-//CreateBulkRunFuncChannel 创建一个指定并行数量处理的方法通道
+//CreateBulkRunFuncChannel 创建一个指定并发数量处理的方法通道
 func CreateBulkRunFuncChannel(maxTaskCount, maxFuncCount int) (funcs chan func()) {
 	funcs = make(chan func(), maxFuncCount)
-	ch := make(chan int, maxTaskCount)
-	go func(funcs chan func(), ch chan int) {
+	ch := make(chan struct{}, maxTaskCount)
+	go func(funcs chan func(), ch chan struct{}) {
 		defer close(funcs)
 		defer close(ch)
 		for {
@@ -40,7 +40,7 @@ func CreateBulkRunFuncChannel(maxTaskCount, maxFuncCount int) (funcs chan func()
 				if !ok {
 					return
 				}
-				ch <- 1
+				ch <- struct{}{}
 				go func(f func()) {
 					f()
 					<-ch
