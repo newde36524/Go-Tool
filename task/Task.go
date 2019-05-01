@@ -1,8 +1,13 @@
 package task
 
+import (
+	"time"
+)
+
 //Task Task结构体
 type Task struct {
-	funcs chan func()
+	funcs   chan func()
+	timeOut time.Duration
 }
 
 //Run 创建一个异步执行任务
@@ -24,7 +29,7 @@ func NewTask() *Task {
 func (t *Task) Start(fn func()) {
 	go func() {
 		fn()
-		defer close(t.funcs)
+		ch := make(chan int, 1)
 		for {
 			if len(t.funcs) == 0 {
 				return
@@ -34,7 +39,20 @@ func (t *Task) Start(fn func()) {
 				if !ok {
 					return
 				}
-				f()
+				select {
+				case ch <- 1:
+					go func() {
+						f()
+						<-ch
+					}()
+				case <-time.After(t.timeOut):
+					for len(t.funcs) > 0 {
+						<-t.funcs
+					}
+					return
+				}
+			default:
+				return
 			}
 		}
 	}()
