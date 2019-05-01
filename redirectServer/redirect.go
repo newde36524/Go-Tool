@@ -20,6 +20,7 @@ func (r *Redirect) Run(addrA, addrB string) {
 	r.connection(a, b)
 
 }
+
 func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 	connA, err := net.DialTCP("tcp", nil, serverA)
 	if err != nil {
@@ -35,9 +36,10 @@ func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 			n, err := a.Read(buffer)
 			if err != nil {
 				fmt.Println(err)
+			} else {
+				b.Write(buffer[:n])
+				fmt.Printf("a ====> b : %X", buffer[:n])
 			}
-			b.Write(buffer[:n])
-			fmt.Printf("a ====> b : %X", buffer[:n])
 		}
 	}(connA, connB)
 	go func(a, b *net.TCPConn) {
@@ -46,9 +48,10 @@ func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 			n, err := b.Read(buffer)
 			if err != nil {
 				fmt.Println(err)
+			} else {
+				a.Write(buffer[:n])
+				fmt.Printf("b ====> a : %X", buffer[:n])
 			}
-			a.Write(buffer[:n])
-			fmt.Printf("b ====> a : %X", buffer[:n])
 		}
 	}(connA, connB)
 }
