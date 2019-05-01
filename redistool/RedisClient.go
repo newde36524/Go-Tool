@@ -43,22 +43,19 @@ func NewRedisClient(option *RedisClientOption) *RedisClient {
 func (redisClient *RedisClient) Connect(addr string) error {
 	redisClient.Close() //可关闭旧连接，连接新地址
 	redisClient.addr = addr
-	conn, err := redisClient.Clone()
+	conn, err := redisClient.create()
 	if err != nil {
 		logs.Error(err)
 	}
-	redisClient.c = conn.c
+	redisClient.c = conn
 	return err
 }
 
 //Clone 相同的配置创建一个新的RedisClient实例
-func (redisClient *RedisClient) Clone() (*RedisClient, error) {
-	conn, err := redisClient.create()
-	if err != nil {
-		return nil, err
-	}
-	redisClient.c = conn
-	return redisClient, err
+func (redisClient *RedisClient) Clone() (client *RedisClient, err error) {
+	client = new(RedisClient)
+	client.option = redisClient.option
+	return
 }
 
 //create 用相同的配置创建一个新的redis连接
