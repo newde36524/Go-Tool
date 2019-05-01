@@ -38,7 +38,7 @@ func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 				fmt.Println(err)
 			} else {
 				b.Write(buffer[:n])
-				fmt.Printf("a ====> b : %X", buffer[:n])
+				fmt.Printf("a ====> b : %X \n", buffer[:n])
 			}
 		}
 	}(connA, connB)
@@ -50,7 +50,7 @@ func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 				fmt.Println(err)
 			} else {
 				a.Write(buffer[:n])
-				fmt.Printf("b ====> a : %X", buffer[:n])
+				fmt.Printf("b ====> a : %X \n", buffer[:n])
 			}
 		}
 	}(connA, connB)
