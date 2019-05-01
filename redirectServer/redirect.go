@@ -3,6 +3,7 @@ package redirectServer
 import (
 	"fmt"
 	"net"
+	"time"
 )
 
 type Redirect struct {
@@ -36,6 +37,7 @@ func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 			n, err := a.Read(buffer)
 			if err != nil {
 				fmt.Println(err)
+				<-time.After(time.Second)
 			} else {
 				b.Write(buffer[:n])
 				fmt.Printf("a ====> b : %X \n", buffer[:n])
@@ -48,6 +50,7 @@ func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 			n, err := b.Read(buffer)
 			if err != nil {
 				fmt.Println(err)
+				<-time.After(time.Second)
 			} else {
 				a.Write(buffer[:n])
 				fmt.Printf("b ====> a : %X \n", buffer[:n])
