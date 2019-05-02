@@ -27,11 +27,16 @@ func RunTask2(maxTaskCount int, funcs <-chan func()) {
 	}
 }
 
-//CreateBulkRunFuncChannel 创建一个指定并发数量处理的方法通道
-func CreateBulkRunFuncChannel(maxTaskCount, maxFuncCount int) (funcs chan func()) {
+//CreateBulkRunFuncChannel 创建一个指定并发数量处理,只允许发送的方法通道
+func CreateBulkRunFuncChannel(maxTaskCount, maxFuncCount int) chan<- func() {
+	return createBulkRunFuncChannel(maxTaskCount, maxFuncCount)
+}
+
+//createBulkRunFuncChannel 创建一个指定并发数量处理的方法通道
+func createBulkRunFuncChannel(maxTaskCount, maxFuncCount int) (funcs chan func()) {
 	funcs = make(chan func(), maxFuncCount)
-	ch := make(chan struct{}, maxTaskCount)
-	go func(funcs chan func(), ch chan struct{}) {
+	go func(funcs chan func(), maxTaskCount int) {
+		ch := make(chan struct{}, maxTaskCount)
 		defer close(funcs)
 		defer close(ch)
 		for {
@@ -47,6 +52,6 @@ func CreateBulkRunFuncChannel(maxTaskCount, maxFuncCount int) (funcs chan func()
 				}(fn)
 			}
 		}
-	}(funcs, ch)
-	return
+	}(funcs, maxTaskCount)
+	return funcs
 }
