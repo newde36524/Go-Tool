@@ -55,3 +55,27 @@ func createBulkRunFuncChannel(maxTaskCount, maxFuncCount int) (funcs chan func()
 	}(funcs, maxTaskCount)
 	return funcs
 }
+func createBulkRunFuncChannel2(maxTaskCount, maxFuncCount int, done <-chan struct{}) (funcs chan func()) {
+	funcs = make(chan func(), maxFuncCount)
+	go func(funcs chan func(), maxTaskCount int) {
+		ch := make(chan struct{}, maxTaskCount)
+		defer close(funcs)
+		defer close(ch)
+		for {
+			select {
+			case fn, ok := <-funcs:
+				if !ok {
+					return
+				}
+				ch <- struct{}{}
+				go func(f func()) {
+					f()
+					<-ch
+				}(fn)
+			case <-done:
+				return
+			}
+		}
+	}(funcs, maxTaskCount)
+	return funcs
+}

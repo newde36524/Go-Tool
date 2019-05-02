@@ -27,8 +27,9 @@ func main() {
 	// TestMiddleware2()
 	// TestMiddleware3()
 	// TestTask()
+
 	for {
-		<-time.After(24 * time.Hour)
+		<-time.After(time.Hour)
 	}
 }
 
@@ -64,7 +65,7 @@ func TestRedis() {
 	client.Subscript(func(msg string) {
 		fmt.Println(msg)
 	}, "MyTopic")
-	<-time.After(time.Hour)
+
 }
 
 //TestRevertArray .
@@ -96,7 +97,6 @@ func TestBulkRunFuncs2() {
 			time.Sleep(time.Second)
 		}
 	}
-
 }
 
 //TestMiddleware .
