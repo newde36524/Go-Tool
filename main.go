@@ -1,15 +1,16 @@
 package main
 
 import (
+	"Go-Tool/arraytool"
+	"Go-Tool/bulkruntool"
+	middle "Go-Tool/middleware"
+	"Go-Tool/redistool"
+	"Go-Tool/task"
+
 	"fmt"
 	"runtime/debug"
 	"time"
 
-	"./arraytool"
-	"./bulkruntool"
-	middle "./middleware"
-	"./redistool"
-	"./task"
 	"github.com/issue9/logs"
 )
 
