@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-// Server tcp服务器
+//Server tcp服务器
 type Server struct {
 	tcpListener *net.TCPListener //TCP监听对象
 	connOption  ConnOption
 }
 
-// NewServer 新服务
-// @addr 服务器监听地址
-// @connOption 客户端连接配置项
+//NewServer 新服务
+//@addr 服务器监听地址
+//@connOption 客户端连接配置项
 func NewServer(addr string, connOption ConnOption) (*Server, error) {
 	// 根据服务器开启多CPU功能
 	// runtime.GOMAXPROCS(runtime.NumCPU())
@@ -29,7 +29,7 @@ func NewServer(addr string, connOption ConnOption) (*Server, error) {
 	return &Server{listener, connOption}, nil
 }
 
-// Binding 启动tcp服务器
+//Binding 启动tcp服务器
 func (s *Server) Binding() {
 	defer s.tcpListener.Close()
 	s.connOption.Logger.Info("服务器开始监听...")
@@ -48,7 +48,7 @@ func (s *Server) Binding() {
 				continue
 			}
 			c := NewConn(conn, s.connOption)
-			c.Run()
+			c.run()
 		}
 	}()
 }
