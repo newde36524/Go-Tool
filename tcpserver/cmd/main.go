@@ -2,7 +2,7 @@ package main
 
 import (
 	tcp "Go-Tool/tcpserver"
-	"Go-Tool/tcpserver/cmd/customer"
+	customer "Go-Tool/tcpserver/cmd/customer"
 	"context"
 	"fmt"
 	"time"
@@ -23,12 +23,12 @@ func main() {
 	logger, err := tcp.NewDefaultLogger()
 	server, err := tcp.NewServer(address, tcp.ConnOption{
 		MaxSendChanCount: 100,
-		MaxRecvChanCount: 100,                          //最大接包数
-		SendTimeOut:      5 * time.Minute,              //发送消息超时时间
-		RecvTimeOut:      5 * time.Minute,              //接收消息超时时间
-		HandTimeOut:      5 * time.Minute,              //处理消息超时时间
-		Logger:           logger,                       //日志打印对象
-		Handle:           customer.CustomerTCPHandle{}, //包处理对象
+		MaxRecvChanCount: 100,                  //最大接包数
+		SendTimeOut:      5 * time.Minute,      //发送消息超时时间
+		RecvTimeOut:      5 * time.Minute,      //接收消息超时时间
+		HandTimeOut:      5 * time.Minute,      //处理消息超时时间
+		Logger:           logger,               //日志打印对象
+		Handle:           customer.TCPHandle{}, //包处理对象
 	})
 	if err != nil {
 		logs.Error(err)
