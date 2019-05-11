@@ -31,9 +31,8 @@ func NewServer(addr string, connOption ConnOption) (*Server, error) {
 
 //Binding 启动tcp服务器
 func (s *Server) Binding() {
-	defer s.tcpListener.Close()
-	s.connOption.Logger.Info("服务器开始监听...")
 	go func() {
+		defer s.tcpListener.Close()
 		defer func() {
 			if err := recover(); err != nil {
 				s.connOption.Logger.Error(err)

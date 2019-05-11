@@ -11,9 +11,10 @@ type ConnState struct {
 	ComplateTime time.Time //结束活动时间
 	InnerErr     error     //异常信息
 	Message      string    //通知信息
+	RemoteAddr   string    //客户端地址
 }
 
 //String 格式化输出结构体信息
 func (state *ConnState) String() string {
-	return fmt.Sprintf("开始活动时间:%s 结束活动时间:%s 异常信息:%s 通知信息:%s", state.ActiveTime, state.ComplateTime, state.InnerErr, state.Message)
+	return fmt.Sprintf("%s echo: 开始活动时间:%s 结束活动时间:%s 异常信息:%s 通知信息:%s", state.RemoteAddr, state.ActiveTime, state.ComplateTime, state.InnerErr, state.Message)
 }

@@ -36,10 +36,16 @@ func NewConn(conn net.Conn, option ConnOption) (result *Conn) {
 		option: option,
 		state: ConnState{
 			ActiveTime: time.Now(),
+			RemoteAddr: conn.RemoteAddr().String(),
 		},
 	}
 	result.context, result.cancel = context.WithCancel(context.Background())
 	return
+}
+
+//RemoteAddr 连接远程地址
+func (c *Conn) RemoteAddr() string {
+	return c.conn.RemoteAddr().String()
 }
 
 //run 固定处理流程
@@ -69,6 +75,9 @@ func (c *Conn) run() {
 
 //Send 发送消息到设备
 func (c *Conn) Send(packet Packet) {
+	if packet == nil {
+		c.option.Logger.Info("packet is nil")
+	}
 	select {
 	case <-c.context.Done():
 		return
@@ -79,7 +88,7 @@ func (c *Conn) Send(packet Packet) {
 // Close 关闭服务器和设备的连接
 func (c *Conn) Close() {
 	defer c.conn.Close()
-	c.option.Handle.OnClose()
+	c.option.Handle.OnClose(c.state)
 	c.state.Message = "conn is closed"
 	c.state.ComplateTime = time.Now()
 	c.cancel()
@@ -95,7 +104,7 @@ func (c *Conn) readPacket() <-chan Packet {
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		defer close(result)
-		p, err := c.option.Handle.ReadPacket(c, ctx)
+		p, err := c.option.Handle.ReadPacket(ctx, c)
 		if err != nil {
 			c.option.Logger.Error(err)
 		}
