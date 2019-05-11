@@ -69,6 +69,11 @@ func (c *Conn) run() {
 	c.sendChan = c.send(c.option.MaxSendChanCount)
 	c.handChan = c.message()
 	go func() {
+		select {
+		case <-fnProxy(func() { c.option.Handle.OnConnection(c) }):
+		case <-time.After(c.option.SendTimeOut):
+			c.option.Logger.Debugf("%s: Conn.run: OnConnection funtion invoke used time was too long", c.RemoteAddr())
+		}
 		defer func() {
 			close(c.handChan)
 			if c.isDebug {
