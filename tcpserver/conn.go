@@ -48,17 +48,6 @@ func (c *Conn) run() {
 	c.sendChan = c.send(c.option.MaxSendChanCount)
 	c.handChan = c.message()
 	go func() {
-		select {
-		case p, ok := <-c.recvChan:
-			if !ok {
-				c.option.Logger.Debug("Conn.run: recvChan is closed")
-			}
-			select {
-			case <-fnProxy(func() { c.option.Handle.OnFirst(c, p) }):
-			case <-time.After(c.option.HandTimeOut):
-				c.option.Handle.OnTimeOut(c, FirstHandTimeOut)
-			}
-		}
 		for {
 			select {
 			case <-c.context.Done():
