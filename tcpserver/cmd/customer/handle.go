@@ -15,14 +15,23 @@ type CustomerTCPHandle struct {
 //ReadPacket .
 func (CustomerTCPHandle) ReadPacket(context context.Context, conn *tcp.Conn) (tcp.Packet, error) {
 	//todo 定义读取数据帧的规则
-	return nil, nil
+	b := make([]byte, 1024)
+	n, err := conn.Read(b)
+	if err != nil {
+		logs.Error(err)
+	}
+	p := CustomerPacket{}
+	p.SetBuffer(b[:n])
+
+	return p, err
 }
 
 //OnMessage .
 func (CustomerTCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet) error {
 	//todo 处理接收的包
 	sendP := CustomerPacket{}
-	sendP.SetBuffer(p.GetBuffer())
+	data := p.GetBuffer()
+	sendP.SetBuffer(data)
 	conn.Send(p) //回复客户端发送的内容
 	return nil
 }
