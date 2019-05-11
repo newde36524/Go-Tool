@@ -47,6 +47,7 @@ func (s *Server) Binding() {
 				continue
 			}
 			c := NewConn(conn, s.connOption)
+			c.UseDebug()
 			c.run()
 		}
 	}()

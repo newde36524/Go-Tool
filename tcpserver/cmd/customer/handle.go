@@ -20,7 +20,7 @@ func (CustomerTCPHandle) ReadPacket(context context.Context, conn *tcp.Conn) (tc
 	if err != nil {
 		logs.Error(err)
 	}
-	p := CustomerPacket{}
+	p := &CustomerPacket{}
 	p.SetBuffer(b[:n])
 
 	return p, err
