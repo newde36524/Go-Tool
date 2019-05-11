@@ -26,6 +26,10 @@ func (CustomerTCPHandle) ReadPacket(context context.Context, conn *tcp.Conn) (tc
 	return p, err
 }
 
+func (CustomerTCPHandle) OnConnection(conn *tcp.Conn) {
+	//todo 连接建立时处理，用于一些建立连接时，需要主动下发数据包的场景
+}
+
 //OnMessage .
 func (CustomerTCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet) error {
 	//todo 处理接收的包
