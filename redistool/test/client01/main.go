@@ -1,10 +1,10 @@
 package main
 
 import (
+	"Go-Tool/redistool"
 	"fmt"
 	"time"
 
-	"../../../redistool"
 	"github.com/issue9/logs"
 )
 

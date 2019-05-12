@@ -39,90 +39,90 @@ func NewDefaultLogger() (result DefaultLogger, err error) {
 
 //Info .
 func (DefaultLogger) Info(v ...interface{}) {
-	logs.Info(v)
+	logs.Info(v...)
 }
 
 //Infof .
 func (DefaultLogger) Infof(format string, v ...interface{}) {
-	logs.Infof(format, v)
+	logs.Infof(format, v...)
 }
 
 //Debug .
 func (DefaultLogger) Debug(v ...interface{}) {
-	logs.Debug(v)
+	logs.Debug(v...)
 }
 
 //Debugf .
 func (DefaultLogger) Debugf(format string, v ...interface{}) {
-	logs.Debugf(format, v)
+	logs.Debugf(format, v...)
 }
 
 //Trace .
 func (DefaultLogger) Trace(v ...interface{}) {
-	logs.Trace(v)
+	logs.Trace(v...)
 }
 
 //Tracef .
 func (DefaultLogger) Tracef(format string, v ...interface{}) {
-	logs.Tracef(format, v)
+	logs.Tracef(format, v...)
 }
 
 //Warn .
 func (DefaultLogger) Warn(v ...interface{}) {
-	logs.Warn(v)
+	logs.Warn(v...)
 }
 
 //Warnf .
 func (DefaultLogger) Warnf(format string, v ...interface{}) {
-	logs.Warnf(format, v)
+	logs.Warnf(format, v...)
 }
 
 //Error .
 func (DefaultLogger) Error(v ...interface{}) {
-	logs.Error(v)
+	logs.Error(v...)
 }
 
 //Errorf .
 func (DefaultLogger) Errorf(format string, v ...interface{}) {
-	logs.Errorf(format, v)
+	logs.Errorf(format, v...)
 }
 
 //Critical .
 func (DefaultLogger) Critical(v ...interface{}) {
-	logs.Critical(v)
+	logs.Critical(v...)
 }
 
 //Criticalf .
 func (DefaultLogger) Criticalf(format string, v ...interface{}) {
-	logs.Criticalf(format, v)
+	logs.Criticalf(format, v...)
 }
 
 //All .
 func (DefaultLogger) All(v ...interface{}) {
-	logs.All(v)
+	logs.All(v...)
 }
 
 //Allf .
 func (DefaultLogger) Allf(format string, v ...interface{}) {
-	logs.Allf(format, v)
+	logs.Allf(format, v...)
 }
 
 //Fatal .
 func (DefaultLogger) Fatal(code int, v ...interface{}) {
-	logs.Fatal(code, v)
+	logs.Fatal(code, v...)
 }
 
 //Fatalf .
 func (DefaultLogger) Fatalf(code int, format string, v ...interface{}) {
-	logs.Fatalf(code, format, v)
+	logs.Fatalf(code, format, v...)
 }
 
 //Panic .
 func (DefaultLogger) Panic(v ...interface{}) {
-	logs.Panic(v)
+	logs.Panic(v...)
 }
 
 //Panicf .
 func (DefaultLogger) Panicf(format string, v ...interface{}) {
-	logs.Panicf(format, v)
+	logs.Panicf(format, v...)
 }
