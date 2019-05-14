@@ -68,8 +68,8 @@ func (c *Conn) run() {
 	c.recvChan = c.recv(c.option.MaxRecvChanCount)
 	c.sendChan = c.send(c.option.MaxSendChanCount)
 	c.handChan = c.message()
-	c.conn.SetReadDeadline(time.Now().Add(c.option.RecvTimeOut))
-	c.conn.SetWriteDeadline(time.Now().Add(c.option.SendTimeOut))
+	// c.conn.SetReadDeadline(time.Now().Add(c.option.RecvTimeOut))
+	// c.conn.SetWriteDeadline(time.Now().Add(c.option.SendTimeOut))
 	go func() {
 		select {
 		case <-fnProxy(func() { c.option.Handle.OnConnection(c) }):
