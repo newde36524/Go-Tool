@@ -164,7 +164,7 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 		defer func() {
 			close(result)
 			if c.isDebug {
-				c.option.Logger.Debugf("%s: recvChan is closed")
+				c.option.Logger.Debugf("%s: recvChan is closed", c.RemoteAddr())
 				c.option.Logger.Debugf("%s: recv goruntinue exit", c.RemoteAddr())
 			}
 		}()
