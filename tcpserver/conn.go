@@ -177,6 +177,7 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 				return
 			case <-time.After(c.option.RecvTimeOut):
 				c.option.Handle.OnTimeOut(c, RecvTimeOut)
+				return //如果超时就自动退出，不再接收数据帧
 			case p, ok := <-ch:
 				if ok {
 					select {
@@ -218,6 +219,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 					return
 				case <-time.After(c.option.SendTimeOut):
 					c.option.Handle.OnTimeOut(c, SendTimeOut)
+					return //如果超时就自动退出，不再发送数据帧
 				case <-fnProxy(func() {
 					sendData, err := packet.Serialize(ctx)
 					if err != nil {
@@ -267,6 +269,7 @@ func (c *Conn) message() chan<- Packet {
 				case <-c.context.Done():
 				case <-time.After(c.option.HandTimeOut):
 					c.option.Handle.OnTimeOut(c, HandTimeOut)
+					return //如果超时就自动退出，不再处理数据帧
 				case <-fnProxy(func() {
 					c.option.Handle.OnMessage(c, p)
 					if c.isDebug {
