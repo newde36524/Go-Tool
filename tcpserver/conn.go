@@ -1,3 +1,17 @@
+/*
+	issue
+	1: 超时后由于开启了多个协程，导致超时回调方法被高并发执行，这里需要一些限制
+	2: 调用Close方法时是高并发的，需要做一些限制
+
+
+
+
+
+
+**/
+
+
+
 package tcpserver
 
 import (
@@ -52,9 +66,7 @@ func (c *Conn) UseDebug() {
 
 func (c *Conn) Read(b []byte) (int, error) {
 	n, err := c.conn.Read(b)
-	if err != nil {
-		c.Close()
-	}
+	c.conn.SetReadDeadline(time.Now().Add(c.option.RecvTimeOut))
 	return n, err
 }
 
@@ -228,6 +240,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 						select {
 						case <-ctx.Done():
 						default:
+							c.conn.SetWriteDeadline(time.Now().Add(c.option.SendTimeOut))
 							_, err = c.conn.Write(sendData)
 							if err != nil {
 								c.option.Logger.Error(err)
