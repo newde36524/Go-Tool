@@ -1,17 +1,3 @@
-/*
-	issue
-	1: 超时后由于开启了多个协程，导致超时回调方法被高并发执行，这里需要一些限制
-	2: 调用Close方法时是高并发的，需要做一些限制
-
-
-
-
-
-
-**/
-
-
-
 package tcpserver
 
 import (
@@ -29,6 +15,14 @@ func fnProxy(fn func()) <-chan struct{} {
 		result <- struct{}{}
 	}()
 	return result
+}
+func safeFn(fn func()){
+	defer func(){
+		if err := recover();err != nil {
+			c.option.Logger.Errorf("%s: %s", c.RemoteAddr(),err)
+		}
+	}()
+	fn()
 }
 
 //Conn 连接代理对象
@@ -80,7 +74,7 @@ func (c *Conn) run() {
 	c.recvChan = c.recv(c.option.MaxRecvChanCount)
 	c.sendChan = c.send(c.option.MaxSendChanCount)
 	c.handChan = c.message()
-	go func() {
+	go SafeFn(func() {
 		select {
 		case <-fnProxy(func() { c.option.Handle.OnConnection(c) }):
 		case <-time.After(c.option.SendTimeOut):
@@ -112,10 +106,10 @@ func (c *Conn) run() {
 				}
 			}
 		}
-	}()
+	})
 }
 
-//Send 发送消息到设备
+//Send 发送消息到客户端
 func (c *Conn) Send(packet Packet) {
 	if packet == nil {
 		c.option.Logger.Errorf("%s: packet is nil,do nothing", c.RemoteAddr())
@@ -128,7 +122,7 @@ func (c *Conn) Send(packet Packet) {
 	}
 }
 
-// Close 关闭服务器和设备的连接
+// Close 关闭服务器和客户端的连接
 func (c *Conn) Close() {
 	defer c.conn.Close()
 	c.option.Handle.OnClose(c.state)
@@ -142,7 +136,7 @@ func (c *Conn) Close() {
 //ReadPacket 读取一个包
 func (c *Conn) readPacket(ctx context.Context) <-chan Packet {
 	result := make(chan Packet)
-	go func() {
+	go safeFn(func() {
 		select {
 		case <-ctx.Done():
 			return
@@ -163,14 +157,14 @@ func (c *Conn) readPacket(ctx context.Context) <-chan Packet {
 			case result <- p:
 			}
 		}
-	}()
+	})
 	return result
 }
 
 //recv 创建一个包接收channel
 func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 	result := make(chan Packet, maxRecvChanCount)
-	go func() {
+	go safeFn(func() {
 		defer func() {
 			close(result)
 			if c.isDebug {
@@ -180,7 +174,6 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 		}()
 		for {
 			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
 			ch := c.readPacket(ctx)
 			select {
 			case <-c.context.Done():
@@ -197,15 +190,16 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 					}
 				}
 			}
+			cancel()
 		}
-	}()
+	})
 	return result
 }
 
 //send 创建一个包发送channel
 func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 	result := make(chan Packet, maxSendChanCount)
-	go func() {
+	go safeFn(func() {
 		defer func() {
 			if c.isDebug {
 				c.option.Logger.Debugf("%s: send goruntinue exit", c.RemoteAddr())
@@ -229,6 +223,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 					return
 				case <-time.After(c.option.SendTimeOut):
 					c.option.Handle.OnTimeOut(c, SendTimeOut)
+					cancel()
 					return //如果超时就自动退出，不再发送数据帧
 				case <-fnProxy(func() {
 					sendData, err := packet.Serialize(ctx)
@@ -237,6 +232,9 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 					} else {
 						select {
 						case <-ctx.Done():
+							if c.isDebug {
+								c.option.Logger.Debugf("%s: cancel send packet", c.RemoteAddr())
+							}
 						default:
 							c.conn.SetWriteDeadline(time.Now().Add(c.option.SendTimeOut))
 							_, err = c.conn.Write(sendData)
@@ -254,14 +252,14 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 				}
 			}
 		}
-	}()
+	})
 	return result
 }
 
 //message 创建一个消息处理channel
 func (c *Conn) message() chan<- Packet {
 	result := make(chan Packet, 1)
-	go func() {
+	go safeFn(func() {
 		defer func() {
 			if c.isDebug {
 				c.option.Logger.Debugf("%s: hand goruntinue exit", c.RemoteAddr())
@@ -290,6 +288,6 @@ func (c *Conn) message() chan<- Packet {
 				}
 			}
 		}
-	}()
+	})
 	return result
 }
