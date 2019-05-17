@@ -19,6 +19,7 @@ func (TCPHandle) ReadPacket(context context.Context, conn *tcp.Conn) (tcp.Packet
 	n, err := conn.Read(b)
 	if err != nil {
 		logs.Error(err)
+		conn.Close()
 	}
 	p := &Packet{}
 	p.SetBuffer(b[:n])

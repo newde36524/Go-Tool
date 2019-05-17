@@ -16,10 +16,10 @@ func fnProxy(fn func()) <-chan struct{} {
 	}()
 	return result
 }
-func safeFn(fn func()){
-	defer func(){
-		if err := recover();err != nil {
-			c.option.Logger.Errorf("%s: %s", c.RemoteAddr(),err)
+func (c *Conn) safeFn(fn func()) {
+	defer func() {
+		if err := recover(); err != nil {
+			c.option.Logger.Errorf("%s: %s", c.RemoteAddr(), err)
 		}
 	}()
 	fn()
@@ -74,7 +74,7 @@ func (c *Conn) run() {
 	c.recvChan = c.recv(c.option.MaxRecvChanCount)
 	c.sendChan = c.send(c.option.MaxSendChanCount)
 	c.handChan = c.message()
-	go SafeFn(func() {
+	go c.safeFn(func() {
 		select {
 		case <-fnProxy(func() { c.option.Handle.OnConnection(c) }):
 		case <-time.After(c.option.SendTimeOut):
@@ -125,9 +125,9 @@ func (c *Conn) Send(packet Packet) {
 // Close 关闭服务器和客户端的连接
 func (c *Conn) Close() {
 	defer c.conn.Close()
-	c.option.Handle.OnClose(c.state)
 	c.state.Message = "conn is closed"
 	c.state.ComplateTime = time.Now()
+	c.option.Handle.OnClose(c.state)
 	c.cancel()
 	// runtime.GC()         //强制GC      待定可能有问题
 	// debug.FreeOSMemory() //强制释放内存 待定可能有问题
@@ -136,7 +136,7 @@ func (c *Conn) Close() {
 //ReadPacket 读取一个包
 func (c *Conn) readPacket(ctx context.Context) <-chan Packet {
 	result := make(chan Packet)
-	go safeFn(func() {
+	go c.safeFn(func() {
 		defer func() {
 			close(result)
 		}()
@@ -164,7 +164,7 @@ func (c *Conn) readPacket(ctx context.Context) <-chan Packet {
 //recv 创建一个包接收channel
 func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 	result := make(chan Packet, maxRecvChanCount)
-	go safeFn(func() {
+	go c.safeFn(func() {
 		defer func() {
 			close(result)
 			if c.isDebug {
@@ -177,6 +177,7 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 			ch := c.readPacket(ctx)
 			select {
 			case <-c.context.Done():
+				cancel()
 				return
 			case <-time.After(c.option.RecvTimeOut):
 				c.option.Handle.OnTimeOut(c, RecvTimeOut)
@@ -185,6 +186,7 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 				if ok {
 					select {
 					case <-c.context.Done():
+						cancel()
 						return
 					case result <- p:
 					}
@@ -199,7 +201,7 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 //send 创建一个包发送channel
 func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 	result := make(chan Packet, maxSendChanCount)
-	go safeFn(func() {
+	go c.safeFn(func() {
 		defer func() {
 			if c.isDebug {
 				c.option.Logger.Debugf("%s: send goruntinue exit", c.RemoteAddr())
@@ -261,7 +263,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 //message 创建一个消息处理channel
 func (c *Conn) message() chan<- Packet {
 	result := make(chan Packet, 1)
-	go safeFn(func() {
+	go c.safeFn(func() {
 		defer func() {
 			if c.isDebug {
 				c.option.Logger.Debugf("%s: hand goruntinue exit", c.RemoteAddr())

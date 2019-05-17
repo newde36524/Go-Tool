@@ -2,7 +2,7 @@ package tcpserver
 
 import (
 	"github.com/issue9/logs"
-)
+) 
 
 //Logger 日志接口
 type Logger interface {
@@ -18,7 +18,7 @@ type Logger interface {
 	Errorf(format string, v ...interface{})
 	Critical(v ...interface{})
 	Criticalf(format string, v ...interface{})
-	All(v ...interface{})
+	All(v ...interface{})  
 	Allf(format string, v ...interface{})
 	Fatal(code int, v ...interface{})
 	Fatalf(code int, format string, v ...interface{})
