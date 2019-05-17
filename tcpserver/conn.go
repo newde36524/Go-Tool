@@ -137,14 +137,14 @@ func (c *Conn) Close() {
 func (c *Conn) readPacket(ctx context.Context) <-chan Packet {
 	result := make(chan Packet)
 	go safeFn(func() {
+		defer func() {
+			close(result)
+		}()
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
-		defer func() {
-			close(result)
-		}()
 		p, err := c.option.Handle.ReadPacket(ctx, c)
 		if err != nil {
 			c.option.Logger.Error(err)
@@ -180,7 +180,7 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 				return
 			case <-time.After(c.option.RecvTimeOut):
 				c.option.Handle.OnTimeOut(c, RecvTimeOut)
-				return //如果超时就自动退出，不再接收数据帧
+				// return //如果超时就自动退出，不再接收数据帧
 			case p, ok := <-ch:
 				if ok {
 					select {
@@ -211,10 +211,12 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 				return
 			case packet, ok := <-result:
 				if !ok {
-					if c.isDebug {
-						c.option.Logger.Debugf("%s: Conn.Send:sendChan is closed", c.RemoteAddr())
-					}
-					return
+					c.option.Logger.Errorf("%s: Conn.Send:sendChan is closed", c.RemoteAddr())
+					break
+				}
+				if packet == nil {
+					c.option.Logger.Errorf("%s: Conn.Send:sendPacket is nil", c.RemoteAddr())
+					break
 				}
 				ctx, cancel := context.WithTimeout(context.Background(), c.option.SendTimeOut)
 				select {
@@ -224,7 +226,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 				case <-time.After(c.option.SendTimeOut):
 					c.option.Handle.OnTimeOut(c, SendTimeOut)
 					cancel()
-					return //如果超时就自动退出，不再发送数据帧
+					// return //如果超时就自动退出，不再发送数据帧
 				case <-fnProxy(func() {
 					sendData, err := packet.Serialize(ctx)
 					if err != nil {
@@ -272,13 +274,16 @@ func (c *Conn) message() chan<- Packet {
 			case p, ok := <-result:
 				if !ok {
 					c.option.Logger.Error("%s: Conn.Message: hand packet chan was closed", c.RemoteAddr())
-					return
+					// return
+				}
+				if p == nil {
+					c.option.Logger.Error("%s: Conn.Message: hand packet is nil", c.RemoteAddr())
 				}
 				select {
 				case <-c.context.Done():
 				case <-time.After(c.option.HandTimeOut):
 					c.option.Handle.OnTimeOut(c, HandTimeOut)
-					return //如果超时就自动退出，不再处理数据帧
+					// return //如果超时就自动退出，不再处理数据帧
 				case <-fnProxy(func() {
 					c.option.Handle.OnMessage(c, p)
 					if c.isDebug {
