@@ -216,10 +216,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 					c.option.Logger.Errorf("%s: Conn.Send:sendChan is closed", c.RemoteAddr())
 					break
 				}
-				if packet == nil {
-					c.option.Logger.Errorf("%s: Conn.Send:sendPacket is nil", c.RemoteAddr())
-					break
-				}
+
 				ctx, cancel := context.WithTimeout(context.Background(), c.option.SendTimeOut)
 				select {
 				case <-c.context.Done():
@@ -230,6 +227,10 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 					cancel()
 					// return //如果超时就自动退出，不再发送数据帧
 				case <-fnProxy(func() {
+					if packet == nil {
+						c.option.Logger.Errorf("%s: Conn.Send:sendPacket is nil", c.RemoteAddr())
+						return
+					}
 					sendData, err := packet.Serialize(ctx)
 					if err != nil {
 						c.option.Logger.Error(err)
@@ -275,11 +276,8 @@ func (c *Conn) message() chan<- Packet {
 				return
 			case p, ok := <-result:
 				if !ok {
-					c.option.Logger.Error("%s: Conn.Message: hand packet chan was closed", c.RemoteAddr())
-					// return
-				}
-				if p == nil {
-					c.option.Logger.Error("%s: Conn.Message: hand packet is nil", c.RemoteAddr())
+					c.option.Logger.Errorf("%s: Conn.Message: hand packet chan was closed", c.RemoteAddr())
+					break
 				}
 				select {
 				case <-c.context.Done():
@@ -287,6 +285,10 @@ func (c *Conn) message() chan<- Packet {
 					c.option.Handle.OnTimeOut(c, HandTimeOut)
 					// return //如果超时就自动退出，不再处理数据帧
 				case <-fnProxy(func() {
+					if p == nil {
+						c.option.Logger.Errorf("%s: Conn.Message: hand packet is nil", c.RemoteAddr())
+						return
+					}
 					c.option.Handle.OnMessage(c, p)
 					if c.isDebug {
 						c.option.Logger.Debugf("%s: hand a packet", c.RemoteAddr())
