@@ -9,4 +9,5 @@ type TCPHandle interface {
 	OnMessage(conn *Conn, p Packet) error                           //每次获取到消息时处理
 	OnClose(state ConnState)                                        //连接关闭时处理
 	OnTimeOut(conn *Conn, code TimeOutState)                        //超时处理
+	OnError(conn *Conn, err error)                                  //错误时处理
 }

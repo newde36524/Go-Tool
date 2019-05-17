@@ -51,3 +51,9 @@ func (TCPHandle) OnClose(state tcp.ConnState) {
 func (TCPHandle) OnTimeOut(conn *tcp.Conn, code tcp.TimeOutState) {
 	logs.Infof("%s: 触发超時，超时类型:%d", conn.RemoteAddr(), code)
 }
+
+//OnError .
+func (TCPHandle) OnError(conn *tcp.Conn, err error) {
+	logs.Error(err)
+	conn.Close()
+}
