@@ -7,10 +7,15 @@ import (
 )
 
 //fnProxy 代理执行方法,用于检测执行超时
-func fnProxy(fn func()) <-chan struct{} {
+func (c *Conn) fnProxy(fn func()) <-chan struct{} {
 	result := make(chan struct{}, 1)
 	go func() {
-		defer close(result)
+		defer func() {
+			close(result)
+			if err := recover(); err != nil {
+				c.option.Logger.Errorf("%s: %s", c.RemoteAddr(), err)
+			}
+		}()
 		fn()
 		result <- struct{}{}
 	}()
@@ -76,7 +81,7 @@ func (c *Conn) run() {
 	c.handChan = c.message()
 	go c.safeFn(func() {
 		select {
-		case <-fnProxy(func() { c.option.Handle.OnConnection(c) }):
+		case <-c.fnProxy(func() { c.option.Handle.OnConnection(c) }):
 		case <-time.After(c.option.SendTimeOut):
 			c.option.Logger.Debugf("%s: Conn.run: OnConnection funtion invoke used time was too long", c.RemoteAddr())
 		}
@@ -226,7 +231,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 					c.option.Handle.OnTimeOut(c, SendTimeOut)
 					cancel()
 					// return //如果超时就自动退出，不再发送数据帧
-				case <-fnProxy(func() {
+				case <-c.fnProxy(func() {
 					if packet == nil {
 						c.option.Logger.Errorf("%s: Conn.Send:sendPacket is nil", c.RemoteAddr())
 						return
@@ -284,7 +289,7 @@ func (c *Conn) message() chan<- Packet {
 				case <-time.After(c.option.HandTimeOut):
 					c.option.Handle.OnTimeOut(c, HandTimeOut)
 					// return //如果超时就自动退出，不再处理数据帧
-				case <-fnProxy(func() {
+				case <-c.fnProxy(func() {
 					if p == nil {
 						c.option.Logger.Errorf("%s: Conn.Message: hand packet is nil", c.RemoteAddr())
 						return
