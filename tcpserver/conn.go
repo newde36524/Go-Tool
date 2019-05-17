@@ -14,7 +14,7 @@ func (c *Conn) fnProxy(fn func()) <-chan struct{} {
 			close(result)
 			if err := recover(); err != nil {
 				defer recover()
-				c.option.Handle.OnError(c, err.(error))
+				c.option.Handle.OnPanic(c, err.(error))
 			}
 		}()
 		fn()
@@ -26,7 +26,7 @@ func (c *Conn) safeFn(fn func()) {
 	defer func() {
 		if err := recover(); err != nil {
 			defer recover()
-			c.option.Handle.OnError(c, err.(error))
+			c.option.Handle.OnPanic(c, err.(error))
 		}
 	}()
 	fn()
