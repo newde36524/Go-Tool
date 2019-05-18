@@ -22,5 +22,5 @@ func (state *ConnState) String() string {
 	*结束活动时间:%s
 	*异常信息:%s
 	*通知信息:%s
-	`, state.RemoteAddr, state.ActiveTime.Format("2006-01-02 15:04:05"), state.ComplateTime.Format("2006-01-02 15:04:05"), state.InnerErr.Error(), state.Message)
+	`, state.RemoteAddr, state.ActiveTime.Format("2006-01-02 15:04:05"), state.ComplateTime.Format("2006-01-02 15:04:05"), state.InnerErr, state.Message)
 }
