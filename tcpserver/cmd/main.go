@@ -19,7 +19,7 @@ func init() {
 	}
 }
 func main() {
-	address := "127.0.0.1:12336"
+	address := "0.0.0.0:12336"
 	logger, err := tcp.NewDefaultLogger()
 	server, err := tcp.NewServer(address, tcp.ConnOption{
 		MaxSendChanCount: 100,
