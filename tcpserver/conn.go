@@ -22,6 +22,8 @@ func (c *Conn) fnProxy(fn func()) <-chan struct{} {
 	}()
 	return result
 }
+
+//safeFn 代理方法，用于安全调用方法，恢复panic
 func (c *Conn) safeFn(fn func()) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -65,6 +67,7 @@ func (c *Conn) UseDebug() {
 	c.isDebug = true
 }
 
+//Read 从tcp连接中读取数据帧
 func (c *Conn) Read(b []byte) (int, error) {
 	n, err := c.conn.Read(b)
 	c.conn.SetReadDeadline(time.Now().Add(c.option.RecvTimeOut))
@@ -129,7 +132,7 @@ func (c *Conn) Send(packet Packet) {
 	}
 }
 
-// Close 关闭服务器和客户端的连接
+//Close 关闭服务器和客户端的连接
 func (c *Conn) Close() {
 	defer c.conn.Close()
 	c.state.Message = "conn is closed"
@@ -140,7 +143,7 @@ func (c *Conn) Close() {
 	// debug.FreeOSMemory() //强制释放内存 待定可能有问题
 }
 
-//ReadPacket 读取一个包
+//readPacket 读取一个包
 func (c *Conn) readPacket(ctx context.Context) <-chan Packet {
 	result := make(chan Packet)
 	go c.safeFn(func() {
@@ -168,7 +171,7 @@ func (c *Conn) readPacket(ctx context.Context) <-chan Packet {
 	return result
 }
 
-//recv 创建一个包接收channel
+//recv 创建一个可接收 packet channel
 func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 	result := make(chan Packet, maxRecvChanCount)
 	go c.safeFn(func() {
@@ -205,7 +208,7 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 	return result
 }
 
-//send 创建一个包发送channel
+//send 创建一个可发送 packet channel
 func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 	result := make(chan Packet, maxSendChanCount)
 	go c.safeFn(func() {
@@ -268,7 +271,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 	return result
 }
 
-//message 创建一个消息处理channel
+//message 创建一个可发送 hand packet channel
 func (c *Conn) message() chan<- Packet {
 	result := make(chan Packet, 1)
 	go c.safeFn(func() {

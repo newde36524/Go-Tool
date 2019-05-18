@@ -23,15 +23,15 @@ func init() {
 func main() {
 	// TestMiddleware()
 	// TestBulkRunFuncs()
-	TestBulkRunFuncs2()
+	// TestBulkRunFuncs2()
 	// TestRedis()
 	// TestMiddleware2()
 	// TestMiddleware3()
 	// TestTask()
-
-	for {
-		<-time.After(time.Hour)
-	}
+	err := fmt.Errorf("测试异常信息")
+	var err2 error
+	fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
+	fmt.Scanln()
 }
 
 //TestRedis .
