@@ -30,6 +30,7 @@ func (TCPHandle) ReadPacket(context context.Context, conn *tcp.Conn) (tcp.Packet
 //OnConnection .
 func (TCPHandle) OnConnection(conn *tcp.Conn) {
 	//todo 连接建立时处理，用于一些建立连接时，需要主动下发数据包的场景
+	logs.Infof("客户端:%s 连接上来了呦~~~", conn.RemoteAddr())
 }
 
 //OnMessage .
