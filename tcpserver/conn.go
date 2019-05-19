@@ -182,7 +182,7 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 				c.option.Logger.Debugf("%s: recv goruntinue exit", c.RemoteAddr())
 			}
 		}()
-		for {
+		for c.conn != nil {
 			ctx, cancel := context.WithCancel(context.Background())
 			ch := c.readPacket(ctx)
 			select {
@@ -217,7 +217,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 				c.option.Logger.Debugf("%s: send goruntinue exit", c.RemoteAddr())
 			}
 		}()
-		for {
+		for c.conn != nil {
 			select {
 			case <-c.context.Done():
 				return
