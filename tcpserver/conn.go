@@ -135,6 +135,8 @@ func (c *Conn) Send(packet Packet) {
 //Close 关闭服务器和客户端的连接
 func (c *Conn) Close() {
 	defer c.conn.Close()
+	c.conn.SetDeadline(time.Now())      //set read timeout
+	c.conn.SetWriteDeadline(time.Now()) //set write timeout
 	c.state.Message = "conn is closed"
 	c.state.ComplateTime = time.Now()
 	c.option.Handle.OnClose(c.state)
