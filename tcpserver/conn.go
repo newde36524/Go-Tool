@@ -6,34 +6,6 @@ import (
 	"time"
 )
 
-//fnProxy 代理执行方法,用于检测执行超时
-func (c *Conn) fnProxy(fn func()) <-chan struct{} {
-	result := make(chan struct{}, 1)
-	go func() {
-		defer func() {
-			close(result)
-			if err := recover(); err != nil {
-				defer recover()
-				c.option.Handle.OnPanic(c, err.(error))
-			}
-		}()
-		fn()
-		result <- struct{}{}
-	}()
-	return result
-}
-
-//safeFn 代理方法，用于安全调用方法，恢复panic
-func (c *Conn) safeFn(fn func()) {
-	defer func() {
-		if err := recover(); err != nil {
-			defer recover()
-			c.option.Handle.OnPanic(c, err.(error))
-		}
-	}()
-	fn()
-}
-
 //Conn 连接代理对象
 type Conn struct {
 	conn     net.Conn        //tcp连接对象
@@ -60,6 +32,34 @@ func NewConn(conn net.Conn, option ConnOption) (result *Conn) {
 	}
 	result.context, result.cancel = context.WithCancel(context.Background())
 	return
+}
+
+//fnProxy 代理执行方法,用于检测执行超时
+func (c *Conn) fnProxy(fn func()) <-chan struct{} {
+	result := make(chan struct{}, 1)
+	go func() {
+		defer func() {
+			close(result)
+			if err := recover(); err != nil {
+				defer recover()
+				c.option.Handle.OnPanic(c, err.(error))
+			}
+		}()
+		fn()
+		result <- struct{}{}
+	}()
+	return result
+}
+
+//safeFn 代理方法，用于安全调用方法，恢复panic
+func (c *Conn) safeFn(fn func()) {
+	defer func() {
+		if err := recover(); err != nil {
+			defer recover()
+			c.option.Handle.OnPanic(c, err.(error))
+		}
+	}()
+	fn()
 }
 
 //UseDebug 打开框架内部Debug信息

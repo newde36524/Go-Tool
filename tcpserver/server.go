@@ -12,10 +12,10 @@ type Server struct {
 	connOption  ConnOption
 }
 
-//NewServer 新服务
+//New 新服务
 //@addr 服务器监听地址
 //@connOption 客户端连接配置项
-func NewServer(addr string, connOption ConnOption) (*Server, error) {
+func New(addr string, connOption ConnOption) (*Server, error) {
 	// 根据服务器开启多CPU功能
 	// runtime.GOMAXPROCS(runtime.NumCPU())
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
