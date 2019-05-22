@@ -1,0 +1,12 @@
+[Unit]
+Description=tcpserver daemon
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/home/tcpserver
+ExecStart=/home/tcpserver/cmd
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
