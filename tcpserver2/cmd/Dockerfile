@@ -8,3 +8,4 @@ CMD ["./cmd"]
 # 构建镜像  docker build .
 # 标签镜像  docker tag [imageid]
 # 运行容器  docker run -d -p 12336:12336 --name tcpserver tcpserver
+# 查看容器日志 docker log tcpserver
