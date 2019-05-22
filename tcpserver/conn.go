@@ -97,7 +97,7 @@ func (c *Conn) run() {
 			}
 			close(c.sendChan)
 			if c.isDebug {
-				c.option.Logger.Debugf("%s: Conn.Close: sendChan is closed", c.RemoteAddr())
+				c.option.Logger.Debugf("%s: Conn.run: sendChan is closed", c.RemoteAddr())
 				c.option.Logger.Debugf("%s: Conn.run: proxy goruntinue exit", c.RemoteAddr())
 			}
 		}()
@@ -122,7 +122,7 @@ func (c *Conn) run() {
 //Send 发送消息到客户端
 func (c *Conn) Send(packet Packet) {
 	if packet == nil {
-		c.option.Logger.Errorf("%s: packet is nil,do nothing", c.RemoteAddr())
+		c.option.Logger.Errorf("%s: Conn.Send: packet is nil,do nothing", c.RemoteAddr())
 		return
 	}
 	select {
@@ -162,7 +162,7 @@ func (c *Conn) readPacket(ctx context.Context) <-chan Packet {
 			c.option.Logger.Error(err)
 		} else {
 			if c.isDebug {
-				c.option.Logger.Debugf("%s: read a packet", c.RemoteAddr())
+				c.option.Logger.Debugf("%s: Conn.readPacket read a packet", c.RemoteAddr())
 			}
 			select {
 			case <-ctx.Done():
@@ -180,8 +180,8 @@ func (c *Conn) recv(maxRecvChanCount int) <-chan Packet {
 		defer func() {
 			close(result)
 			if c.isDebug {
-				c.option.Logger.Debugf("%s: recvChan is closed", c.RemoteAddr())
-				c.option.Logger.Debugf("%s: recv goruntinue exit", c.RemoteAddr())
+				c.option.Logger.Debugf("%s: Conn.recv: recvChan is closed", c.RemoteAddr())
+				c.option.Logger.Debugf("%s: Conn.recv: recv goruntinue exit", c.RemoteAddr())
 			}
 		}()
 		for c.conn != nil {
@@ -216,7 +216,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 	go c.safeFn(func() {
 		defer func() {
 			if c.isDebug {
-				c.option.Logger.Debugf("%s: send goruntinue exit", c.RemoteAddr())
+				c.option.Logger.Debugf("%s: Conn.send: send goruntinue exit", c.RemoteAddr())
 			}
 		}()
 		for c.conn != nil {
@@ -225,7 +225,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 				return
 			case packet, ok := <-result:
 				if !ok {
-					c.option.Logger.Errorf("%s: Conn.Send:sendChan is closed", c.RemoteAddr())
+					c.option.Logger.Errorf("%s: Conn.send: sendChan is closed", c.RemoteAddr())
 					break
 				}
 
@@ -240,7 +240,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 					// return //如果超时就自动退出，不再发送数据帧
 				case <-c.fnProxy(func() {
 					if packet == nil {
-						c.option.Logger.Errorf("%s: Conn.Send:sendPacket is nil", c.RemoteAddr())
+						c.option.Logger.Errorf("%s: Conn.send: sendPacket is nil", c.RemoteAddr())
 						return
 					}
 					sendData, err := packet.Serialize(ctx)
@@ -250,7 +250,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 						select {
 						case <-ctx.Done():
 							if c.isDebug {
-								c.option.Logger.Debugf("%s: cancel send packet", c.RemoteAddr())
+								c.option.Logger.Debugf("%s: Conn.send: cancel send packet", c.RemoteAddr())
 							}
 						default:
 							c.conn.SetWriteDeadline(time.Now().Add(c.option.SendTimeOut))
@@ -259,7 +259,7 @@ func (c *Conn) send(maxSendChanCount int) chan<- Packet {
 								c.option.Logger.Error(err)
 							} else {
 								if c.isDebug {
-									c.option.Logger.Debugf("%s: send a packet", c.RemoteAddr())
+									c.option.Logger.Debugf("%s: Conn.send: send a packet", c.RemoteAddr())
 								}
 							}
 							cancel()
@@ -279,7 +279,7 @@ func (c *Conn) message() chan<- Packet {
 	go c.safeFn(func() {
 		defer func() {
 			if c.isDebug {
-				c.option.Logger.Debugf("%s: hand goruntinue exit", c.RemoteAddr())
+				c.option.Logger.Debugf("%s: Conn.message: hand goruntinue exit", c.RemoteAddr())
 			}
 		}()
 		for {
@@ -288,7 +288,7 @@ func (c *Conn) message() chan<- Packet {
 				return
 			case p, ok := <-result:
 				if !ok {
-					c.option.Logger.Errorf("%s: Conn.Message: hand packet chan was closed", c.RemoteAddr())
+					c.option.Logger.Errorf("%s: Conn.message: hand packet chan was closed", c.RemoteAddr())
 					break
 				}
 				select {
@@ -298,12 +298,12 @@ func (c *Conn) message() chan<- Packet {
 					// return //如果超时就自动退出，不再处理数据帧
 				case <-c.fnProxy(func() {
 					if p == nil {
-						c.option.Logger.Errorf("%s: Conn.Message: hand packet is nil", c.RemoteAddr())
+						c.option.Logger.Errorf("%s: Conn.message: hand packet is nil", c.RemoteAddr())
 						return
 					}
 					c.option.Handle.OnMessage(c, p)
 					if c.isDebug {
-						c.option.Logger.Debugf("%s: hand a packet", c.RemoteAddr())
+						c.option.Logger.Debugf("%s: Conn.message: hand a packet", c.RemoteAddr())
 					}
 				}):
 				}
