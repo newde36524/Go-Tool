@@ -1,5 +1,5 @@
 FROM golang:latest
-RUN go build -v
+# RUN go build -v
 WORKDIR /home/go/release/app
 COPY . .
 LABEL Name=tcpserver Version=0.0.1
