@@ -86,6 +86,11 @@ func (c *Conn) LocalAddr() string {
 	return c.conn.LocalAddr().String()
 }
 
+//Raw 获取原始连接
+func (c *Conn) Raw() net.Conn {
+	return c.conn
+}
+
 //run 固定处理流程
 func (c *Conn) run() {
 	c.recvChan = c.recv(c.option.MaxRecvChanCount)(c.heartBeat(c.option.RecvTimeOut, func() { c.option.Handle.OnTimeOut(c, RecvTimeOutCode) }))
