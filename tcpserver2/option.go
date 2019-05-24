@@ -9,8 +9,8 @@ type ConnOption struct {
 	SendTimeOut      time.Duration //发送包消息处理超时时间
 	RecvTimeOut      time.Duration //接收包消息处理超时时间
 	HandTimeOut      time.Duration //处理消息超时时间
-	WriteDataTimeOut time.Duration //发送数据超时
-	ReadDataTimeOut  time.Duration //接收数据超时
+	WriteDataTimeOut time.Duration //发送数据超时时间
+	ReadDataTimeOut  time.Duration //接收数据超时时间
 	Logger           Logger        //日志打印对象
 	Handle           TCPHandle     //包处理对象
 
