@@ -288,7 +288,12 @@ func (c *Conn) message(maxHandNum int) func(<-chan struct{}) chan<- Packet {
 func (c *Conn) heartBeat(timeOut time.Duration, callback func()) <-chan struct{} {
 	result := make(chan struct{})
 	go func() {
-		defer close(result)
+		defer func() {
+			close(result)
+			if c.isDebug {
+				c.option.Logger.Debugf("%s: Conn.heartBeat: heartBeat goruntinue exit", c.RemoteAddr())
+			}
+		}()
 		for {
 			select {
 			case result <- struct{}{}:
