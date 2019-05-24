@@ -13,5 +13,4 @@ type ConnOption struct {
 	ReadDataTimeOut  time.Duration //接收数据超时时间
 	Logger           Logger        //日志打印对象
 	Handle           TCPHandle     //包处理对象
-
 }
