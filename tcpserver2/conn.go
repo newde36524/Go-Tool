@@ -72,7 +72,11 @@ func (c *Conn) UseDebug() {
 
 //Read 从tcp连接中读取数据帧
 func (c *Conn) Read(b []byte) (n int, err error) {
+	c.conn.SetReadDeadline(time.Now().Add(c.option.ReadDataTimeOut))
 	n, err = c.conn.Read(b)
+	if err != nil {
+		c.option.Handle.OnRecvError(c, err)
+	}
 	return
 }
 
@@ -238,7 +242,7 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 					}
 					_, err = c.conn.Write(sendData)
 					if err != nil {
-						c.option.Logger.Error(err)
+						c.option.Handle.OnSendError(c, err)
 					} else {
 						if c.isDebug {
 							c.option.Logger.Debugf("%s: Conn.send: send a packet", c.RemoteAddr())

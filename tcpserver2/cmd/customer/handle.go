@@ -55,3 +55,13 @@ func (TCPHandle) OnTimeOut(conn *tcp.Conn, code tcp.TimeOutState) {
 func (TCPHandle) OnPanic(conn *tcp.Conn, err error) {
 	logs.Errorf("%s: 客人好像发生了一些不得了的事情哦~~,错误信息:%s", conn.RemoteAddr(), err)
 }
+
+//OnSendError .
+func (TCPHandle) OnSendError(conn *tcp.Conn, err error) {
+	logs.Errorf("%s: 发送数据的时间好像有点久诶~~,错误信息:%s", conn.RemoteAddr(), err)
+}
+
+//OnRecvError .
+func (TCPHandle) OnRecvError(conn *tcp.Conn, err error) {
+	logs.Errorf("%s: 接收数据的时间好像有点久诶~~,错误信息:%s", conn.RemoteAddr(), err)
+}
