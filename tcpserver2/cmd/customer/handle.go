@@ -57,7 +57,7 @@ func (TCPHandle) OnPanic(conn *tcp.Conn, err error) {
 }
 
 //OnSendError .
-func (TCPHandle) OnSendError(conn *tcp.Conn, err error) {
+func (TCPHandle) OnSendError(conn *tcp.Conn, packet tcp.Packet, err error) {
 	logs.Errorf("%s: 发送数据的时间好像有点久诶~~,错误信息:%s", conn.RemoteAddr(), err)
 }
 

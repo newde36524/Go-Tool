@@ -242,7 +242,7 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 					}
 					_, err = c.conn.Write(sendData)
 					if err != nil {
-						c.option.Handle.OnSendError(c, err)
+						c.option.Handle.OnSendError(c, packet, err)
 					} else {
 						if c.isDebug {
 							c.option.Logger.Debugf("%s: Conn.send: send a packet", c.RemoteAddr())
