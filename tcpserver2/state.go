@@ -17,8 +17,7 @@ type ConnState struct {
 //String 格式化输出结构体信息
 func (state *ConnState) String() string {
 	return fmt.Sprintf(
-		`
-		*客户端IP:%s
+		`*客户端IP:%s
 		*开始活动时间:%s
 		*结束活动时间:%s
 		*异常信息:%s
