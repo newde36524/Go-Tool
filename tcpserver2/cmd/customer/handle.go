@@ -2,11 +2,12 @@ package customer
 
 import (
 	tcp "Go-Tool/tcpserver2"
+	"net"
 
 	"github.com/issue9/logs"
 )
 
-//TCPHandle tcpserver使用示例，回复相同的内容
+//TCPHandle tcpserver使用示例,回复相同的内容
 type TCPHandle struct {
 	tcp.TCPHandle
 }
@@ -17,8 +18,13 @@ func (TCPHandle) ReadPacket(conn *tcp.Conn) tcp.Packet {
 	b := make([]byte, 1024)
 	n, err := conn.Read(b)
 	if err != nil {
-		logs.Error(err)
-		conn.Close()
+		switch e := err.(type) {
+		case net.Error:
+			if !e.Timeout() {
+				logs.Error(err)
+				conn.Close()
+			}
+		}
 	}
 	p := &Packet{}
 	p.SetBuffer(b[:n])
@@ -28,8 +34,8 @@ func (TCPHandle) ReadPacket(conn *tcp.Conn) tcp.Packet {
 
 //OnConnection .
 func (TCPHandle) OnConnection(conn *tcp.Conn) {
-	//todo 连接建立时处理，用于一些建立连接时，需要主动下发数据包的场景
-	logs.Infof("客户:%s 客人好像对你很感兴趣呦~~", conn.RemoteAddr())
+	//todo 连接建立时处理,用于一些建立连接时,需要主动下发数据包的场景,可以在这里开启心跳协程,做登录验证等等
+	logs.Infof("%s: 对方好像对你很感兴趣呦~~", conn.RemoteAddr())
 }
 
 //OnMessage .
@@ -43,17 +49,17 @@ func (TCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet) {
 
 //OnClose .
 func (TCPHandle) OnClose(state tcp.ConnState) {
-	logs.Infof("客人好像撤退了呦~~,连接状态:%s", state.String())
+	logs.Infof("对方好像撤退了呦~~,连接状态:%s", state.String())
 }
 
 //OnTimeOut .
 func (TCPHandle) OnTimeOut(conn *tcp.Conn, code tcp.TimeOutState) {
-	logs.Infof("%s: 客人好像在做一些灰暗的事情呢~~,超时类型:%d", conn.RemoteAddr(), code)
+	logs.Infof("%s: 对方好像在做一些灰暗的事情呢~~,超时类型:%d", conn.RemoteAddr(), code)
 }
 
 //OnPanic .
 func (TCPHandle) OnPanic(conn *tcp.Conn, err error) {
-	logs.Errorf("%s: 客人好像发生了一些不得了的事情哦~~,错误信息:%s", conn.RemoteAddr(), err)
+	logs.Errorf("%s: 对方好像发生了一些不得了的事情哦~~,错误信息:%s", conn.RemoteAddr(), err)
 }
 
 //OnSendError .
