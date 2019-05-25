@@ -1,11 +1,12 @@
 package main
 
 import (
-	tcp "Go-Tool/tcpserver2"
-	customer "Go-Tool/tcpserver2/cmd/customer"
 	"context"
 	"fmt"
 	"time"
+
+	tcp "github.com/newde36524/Go-Tool/tcpserver2"
+	customer "github.com/newde36524/Go-Tool/tcpserver2/cmd/customer"
 
 	"github.com/issue9/logs"
 )

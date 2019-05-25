@@ -1,8 +1,9 @@
 package customer
 
 import (
-	tcp "Go-Tool/tcpserver2"
 	"context"
+
+	tcp "github.com/newde36524/Go-Tool/tcpserver2"
 )
 
 //Packet .
