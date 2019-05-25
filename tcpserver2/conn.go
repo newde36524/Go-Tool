@@ -11,6 +11,7 @@ import (
 type Conn struct {
 	conn     net.Conn        //tcp连接对象
 	option   ConnOption      //连接配置项
+	handle   TCPHandle       //连接处理程序
 	state    ConnState       //连接状态
 	context  context.Context //全局上下文
 	recvChan <-chan Packet   //接收消息队列
@@ -25,6 +26,7 @@ func NewConn(conn net.Conn, option ConnOption) (result *Conn) {
 	result = &Conn{
 		conn:   conn,
 		option: option,
+		handle: option.Handle(),
 		state: ConnState{
 			ActiveTime: time.Now(),
 			RemoteAddr: conn.RemoteAddr().String(),
@@ -43,7 +45,7 @@ func (c *Conn) fnProxy(fn func()) <-chan struct{} {
 			close(result)
 			if err := recover(); err != nil {
 				defer recover()
-				c.option.Handle.OnPanic(c, err.(error))
+				c.handle.OnPanic(c, err.(error))
 				c.option.Logger.Error(string(debug.Stack()))
 			}
 		}()
@@ -58,7 +60,7 @@ func (c *Conn) safeFn(fn func()) {
 	defer func() {
 		if err := recover(); err != nil {
 			defer recover()
-			c.option.Handle.OnPanic(c, err.(error))
+			c.handle.OnPanic(c, err.(error))
 			c.option.Logger.Error(string(debug.Stack()))
 		}
 	}()
@@ -75,7 +77,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 	c.conn.SetReadDeadline(time.Now().Add(c.option.ReadDataTimeOut))
 	n, err = c.conn.Read(b)
 	if err != nil {
-		c.option.Handle.OnRecvError(c, err)
+		c.handle.OnRecvError(c, err)
 	}
 	return
 }
@@ -97,12 +99,12 @@ func (c *Conn) Raw() net.Conn {
 
 //run 固定处理流程
 func (c *Conn) run() {
-	c.recvChan = c.recv(c.option.MaxRecvChanCount)(c.heartBeat(c.option.RecvTimeOut, func() { c.option.Handle.OnTimeOut(c, RecvTimeOutCode) }))
-	c.sendChan = c.send(c.option.MaxSendChanCount)(c.heartBeat(c.option.SendTimeOut, func() { c.option.Handle.OnTimeOut(c, SendTimeOutCode) }))
-	c.handChan = c.message(1)(c.heartBeat(c.option.HandTimeOut, func() { c.option.Handle.OnTimeOut(c, HandTimeOutCode) }))
+	c.recvChan = c.recv(c.option.MaxRecvChanCount)(c.heartBeat(c.option.RecvTimeOut, func() { c.handle.OnTimeOut(c, RecvTimeOutCode) }))
+	c.sendChan = c.send(c.option.MaxSendChanCount)(c.heartBeat(c.option.SendTimeOut, func() { c.handle.OnTimeOut(c, SendTimeOutCode) }))
+	c.handChan = c.message(1)(c.heartBeat(c.option.HandTimeOut, func() { c.handle.OnTimeOut(c, HandTimeOutCode) }))
 	go c.safeFn(func() {
 		select {
-		case <-c.fnProxy(func() { c.option.Handle.OnConnection(c) }):
+		case <-c.fnProxy(func() { c.handle.OnConnection(c) }):
 		case <-time.After(c.option.SendTimeOut):
 			c.option.Logger.Debugf("%s: Conn.run: OnConnection funtion invoke used time was too long", c.RemoteAddr())
 		}
@@ -155,7 +157,7 @@ func (c *Conn) Close() {
 	c.conn.SetWriteDeadline(time.Now()) //set write timeout
 	c.state.Message = "conn is closed"
 	c.state.ComplateTime = time.Now()
-	c.option.Handle.OnClose(c.state)
+	c.handle.OnClose(c.state)
 	c.cancel()
 	// runtime.GC()         //强制GC      待定可能有问题
 	// debug.FreeOSMemory() //强制释放内存 待定可能有问题
@@ -173,7 +175,7 @@ func (c *Conn) readPacket() <-chan Packet {
 			return
 		default:
 		}
-		p := c.option.Handle.ReadPacket(c)
+		p := c.handle.ReadPacket(c)
 		result <- p
 	})
 	return result
@@ -242,7 +244,7 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 					}
 					_, err = c.conn.Write(sendData)
 					if err != nil {
-						c.option.Handle.OnSendError(c, packet, err)
+						c.handle.OnSendError(c, packet, err)
 					} else {
 						if c.isDebug {
 							c.option.Logger.Debugf("%s: Conn.send: send a packet", c.RemoteAddr())
@@ -278,7 +280,7 @@ func (c *Conn) message(maxHandNum int) func(<-chan struct{}) chan<- Packet {
 						c.option.Logger.Errorf("%s: Conn.message: hand packet chan was closed", c.RemoteAddr())
 						break
 					}
-					c.option.Handle.OnMessage(c, p)
+					c.handle.OnMessage(c, p)
 					if c.isDebug {
 						c.option.Logger.Debugf("%s: Conn.message: hand a packet", c.RemoteAddr())
 					}

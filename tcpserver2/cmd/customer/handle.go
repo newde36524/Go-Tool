@@ -11,6 +11,8 @@ import (
 //TCPHandle tcpserver使用示例,回复相同的内容
 type TCPHandle struct {
 	tcp.TCPHandle
+	//可增加新的属性
+	//可增加全局属性，比如多个客户端连接可选择转发数据给其他连接，而增加一个全局map
 }
 
 //ReadPacket .
