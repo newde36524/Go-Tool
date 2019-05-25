@@ -34,6 +34,7 @@ func (s *Server) Binding() {
 	go func() {
 		defer s.tcpListener.Close()
 		defer func() {
+			defer recover()
 			if err := recover(); err != nil {
 				s.connOption.Logger.Error(err)
 				s.connOption.Logger.Error(debug.Stack())
