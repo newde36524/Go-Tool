@@ -41,10 +41,12 @@ func (TCPHandle) OnConnection(conn *tcp.Conn) {
 //OnMessage .
 func (TCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet) {
 	//todo 处理接收的包
-	sendP := Packet{}
-	data := p.GetBuffer()
-	sendP.SetBuffer(data)
-	conn.Write(p) //回复客户端发送的内容
+	sendP := &Packet{}
+	if p != nil {
+		data := p.GetBuffer()
+		sendP.SetBuffer(data)
+	}
+	conn.Write(sendP) //回复客户端发送的内容
 }
 
 //OnClose .
