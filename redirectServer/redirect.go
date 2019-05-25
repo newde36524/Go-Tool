@@ -1,15 +1,16 @@
-package redirectServer
+package redirectserver
 
 import (
 	"fmt"
 	"io"
 	"net"
-	"time"
 )
 
+//Redirect .
 type Redirect struct {
 }
 
+//Run .
 func (r *Redirect) Run(addrA, addrB string) {
 	a, err := net.ResolveTCPAddr("tcp", addrA)
 	if err != nil {
@@ -23,6 +24,7 @@ func (r *Redirect) Run(addrA, addrB string) {
 
 }
 
+//connection .
 func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 	connA, err := net.DialTCP("tcp", nil, serverA)
 	if err != nil {
@@ -33,25 +35,19 @@ func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 		fmt.Println(err)
 	}
 	go func(from, to *net.TCPConn) {
-		for {
-			n, err := io.Copy(from, to)
-			if err != nil {
-				fmt.Println(err)
-				<-time.After(time.Second)
-			} else {
-				fmt.Printf("a ====> b : 转发 %d 个字节 \n", n)
-			}
+		n, err := io.Copy(from, to)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Printf("a ====> b : 转发 %d 个字节 \n", n)
 		}
 	}(connA, connB)
 	go func(from, to *net.TCPConn) {
-		for {
-			n, err := io.Copy(from, to)
-			if err != nil {
-				fmt.Println(err)
-				<-time.After(time.Second)
-			} else {
-				fmt.Printf("b ====> a : 转发 %d 个字节 \n", n)
-			}
+		n, err := io.Copy(from, to)
+		if err != nil {
+			fmt.Println("错误信息：", err)
+		} else {
+			fmt.Printf("b ====> a : 转发 %d 个字节 \n", n)
 		}
 	}(connB, connA)
 }

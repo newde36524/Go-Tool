@@ -1,4 +1,4 @@
-package redirectServer
+package redirectserver
 
 import (
 	"net"

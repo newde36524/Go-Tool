@@ -1,17 +1,16 @@
 package main
 
 import (
-	"Go-Tool/arraytool"
-	"Go-Tool/bulkruntool"
-	middle "Go-Tool/middleware"
-	"Go-Tool/redistool"
-	"Go-Tool/task"
-
 	"fmt"
 	"runtime/debug"
 	"time"
 
 	"github.com/issue9/logs"
+	middle "github.com/newde36524/Go-Tool/Middleware"
+	"github.com/newde36524/Go-Tool/arraytool"
+	"github.com/newde36524/Go-Tool/bulkruntool"
+	"github.com/newde36524/Go-Tool/redistool"
+	"github.com/newde36524/Go-Tool/task"
 )
 
 func init() {
