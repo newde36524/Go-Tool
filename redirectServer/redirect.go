@@ -2,6 +2,7 @@ package redirectServer
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"time"
 )
@@ -31,30 +32,26 @@ func (r *Redirect) connection(serverA, serverB *net.TCPAddr) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	go func(a, b *net.TCPConn) {
+	go func(from, to *net.TCPConn) {
 		for {
-			buffer := make([]byte, 1024)
-			n, err := a.Read(buffer)
+			n, err := io.Copy(from, to)
 			if err != nil {
 				fmt.Println(err)
 				<-time.After(time.Second)
 			} else {
-				b.Write(buffer[:n])
-				fmt.Printf("a ====> b : %X \n", buffer[:n])
+				fmt.Printf("a ====> b : 转发 %d 个字节 \n", n)
 			}
 		}
 	}(connA, connB)
-	go func(a, b *net.TCPConn) {
+	go func(from, to *net.TCPConn) {
 		for {
-			buffer := make([]byte, 1024)
-			n, err := b.Read(buffer)
+			n, err := io.Copy(from, to)
 			if err != nil {
 				fmt.Println(err)
 				<-time.After(time.Second)
 			} else {
-				a.Write(buffer[:n])
-				fmt.Printf("b ====> a : %X \n", buffer[:n])
+				fmt.Printf("b ====> a : 转发 %d 个字节 \n", n)
 			}
 		}
-	}(connA, connB)
+	}(connB, connA)
 }
