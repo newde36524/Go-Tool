@@ -19,11 +19,12 @@ func init() {
 		return
 	}
 }
+
 func main() {
 	address := "0.0.0.0:12336"
 	logger, err := tcp.NewDefaultLogger()
 	server, err := tcp.New(address, tcp.ConnOption{
-		MaxSendChanCount: 100,
+		MaxSendChanCount: 100,                                                  //最大发包数
 		MaxRecvChanCount: 100,                                                  //最大接包数
 		SendTimeOut:      1 * time.Minute,                                      //发送消息包超时时间
 		RecvTimeOut:      1 * time.Minute,                                      //接收消息包超时时间
