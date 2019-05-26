@@ -21,12 +21,8 @@ func computeAcceptKey(challengeKey string) string {
 
 //WebSocketHandle .
 type WebSocketHandle struct {
-	handle tcp.TCPHandle
-}
-
-//NewWebSocketHandle .
-func NewWebSocketHandle(handle tcp.TCPHandle) WebSocketHandle {
-	return WebSocketHandle{handle}
+	handle        tcp.TCPHandle
+	isFirstHandle bool
 }
 
 //ReadPacket .
@@ -55,10 +51,10 @@ func (WebSocketHandle) OnConnection(conn *tcp.Conn) {
 }
 
 //OnMessage .
-func (WebSocketHandle) OnMessage(conn *tcp.Conn, pkt tcp.Packet) {
-	isFirst := true
+func (h WebSocketHandle) OnMessage(conn *tcp.Conn, pkt tcp.Packet) {
 	sendP := &tcp.BasePacket{}
-	if isFirst {
+	if h.isFirstHandle {
+		h.isFirstHandle = false
 		data := pkt.GetBuffer()
 		challengeKey := string(data) //todo 从第一次读取的数据帧中获得http头中"Sec-Websocket-Key"的属性值
 		p := make([]byte, 0)
@@ -120,4 +116,9 @@ func (WebSocketHandle) OnSendError(conn *tcp.Conn, packet tcp.Packet, err error)
 //OnRecvError .
 func (WebSocketHandle) OnRecvError(conn *tcp.Conn, err error) {
 	logs.Errorf("%s: 接收数据的时间好像有点久诶~~,错误信息:%s", conn.RemoteAddr(), err)
+}
+
+//firstHandShaking 第一次"握手"
+func (WebSocketHandle) firstHandShaking(conn *tcp.Conn) {
+
 }

@@ -9,7 +9,7 @@ import (
 
 //Conn 连接代理对象
 type Conn struct {
-	conn     net.Conn        //tcp连接对象
+	rwc      net.Conn        //tcp原始连接对象
 	option   ConnOption      //连接配置项
 	handle   TCPHandle       //连接处理程序
 	state    ConnState       //连接状态
@@ -22,14 +22,14 @@ type Conn struct {
 }
 
 //NewConn returns a wrapper of raw conn
-func NewConn(conn net.Conn, option ConnOption) (result *Conn) {
+func NewConn(rwc net.Conn, option ConnOption) (result *Conn) {
 	result = &Conn{
-		conn:   conn,
+		rwc:    rwc,
 		option: option,
 		handle: option.Handle(),
 		state: ConnState{
 			ActiveTime: time.Now(),
-			RemoteAddr: conn.RemoteAddr().String(),
+			RemoteAddr: rwc.RemoteAddr().String(),
 		},
 		isDebug: false,
 	}
@@ -74,8 +74,8 @@ func (c *Conn) UseDebug() {
 
 //Read 从tcp连接中读取数据帧
 func (c *Conn) Read(b []byte) (n int, err error) {
-	c.conn.SetReadDeadline(time.Now().Add(c.option.ReadDataTimeOut))
-	n, err = c.conn.Read(b)
+	c.rwc.SetReadDeadline(time.Now().Add(c.option.ReadDataTimeOut))
+	n, err = c.rwc.Read(b)
 	if err != nil {
 		c.handle.OnRecvError(c, err)
 	}
@@ -84,17 +84,17 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 
 //RemoteAddr 客户端IP地址
 func (c *Conn) RemoteAddr() string {
-	return c.conn.RemoteAddr().String()
+	return c.rwc.RemoteAddr().String()
 }
 
 //LocalAddr 服务器IP地址
 func (c *Conn) LocalAddr() string {
-	return c.conn.LocalAddr().String()
+	return c.rwc.LocalAddr().String()
 }
 
 //Raw 获取原始连接
 func (c *Conn) Raw() net.Conn {
-	return c.conn
+	return c.rwc
 }
 
 //run 固定处理流程
@@ -152,9 +152,9 @@ func (c *Conn) Write(packet Packet) {
 
 //Close 关闭服务器和客户端的连接
 func (c *Conn) Close() {
-	defer c.conn.Close()
-	c.conn.SetDeadline(time.Now())      //set read timeout
-	c.conn.SetWriteDeadline(time.Now()) //set write timeout
+	defer c.rwc.Close()
+	c.rwc.SetReadDeadline(time.Time{})  //set read timeout
+	c.rwc.SetWriteDeadline(time.Time{}) //set write timeout
 	c.state.Message = "conn is closed"
 	c.state.ComplateTime = time.Now()
 	c.handle.OnClose(c.state)
@@ -193,7 +193,7 @@ func (c *Conn) recv(maxRecvChanCount int) func(<-chan struct{}) <-chan Packet {
 					c.option.Logger.Debugf("%s: Conn.recv: recv goruntinue exit", c.RemoteAddr())
 				}
 			}()
-			for c.conn != nil {
+			for c.rwc != nil {
 				ch := c.readPacket()
 				select {
 				case <-c.context.Done():
@@ -224,7 +224,7 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 					c.option.Logger.Debugf("%s: Conn.send: send goruntinue exit", c.RemoteAddr())
 				}
 			}()
-			for c.conn != nil {
+			for c.rwc != nil {
 				select {
 				case <-c.context.Done():
 					return
@@ -244,7 +244,7 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 					if err != nil {
 						c.option.Logger.Error(err)
 					}
-					_, err = c.conn.Write(sendData)
+					_, err = c.rwc.Write(sendData)
 					if err != nil {
 						c.handle.OnSendError(c, packet, err)
 					} else {
