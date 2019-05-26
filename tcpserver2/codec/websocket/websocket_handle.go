@@ -19,12 +19,18 @@ func computeAcceptKey(challengeKey string) string {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
+//WebSocketHandle .
 type WebSocketHandle struct {
-	tcp.TCPHandle
+	handle tcp.TCPHandle
+}
+
+//NewWebSocketHandle .
+func NewWebSocketHandle(handle tcp.TCPHandle) WebSocketHandle {
+	return WebSocketHandle{handle}
 }
 
 //ReadPacket .
-func (WebSocketHandle) ReadPacket(conn *tcp.Conn) tcp.Packet {
+func (h WebSocketHandle) ReadPacket(conn *tcp.Conn) tcp.Packet {
 	//todo 定义读取数据帧的规则
 	b, err := ioutil.ReadAll(conn.Raw())
 	if err != nil {
@@ -38,7 +44,8 @@ func (WebSocketHandle) ReadPacket(conn *tcp.Conn) tcp.Packet {
 	}
 	p := &tcp.BasePacket{}
 	p.SetBuffer(b)
-	return nil
+
+	return h.handle.ReadPacket(conn)
 }
 
 //OnConnection .

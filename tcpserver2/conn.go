@@ -199,6 +199,7 @@ func (c *Conn) recv(maxRecvChanCount int) func(<-chan struct{}) <-chan Packet {
 				case <-c.context.Done():
 					return
 				case result <- <-ch:
+					c.state.RecvPacketCount++
 					if c.isDebug {
 						c.option.Logger.Debugf("%s: Conn.recv: read a packet", c.RemoteAddr())
 					}
@@ -228,6 +229,7 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 				case <-c.context.Done():
 					return
 				case packet, ok := <-result:
+					c.state.SendPacketCount++
 					if !ok {
 						if c.isDebug {
 							c.option.Logger.Errorf("%s: Conn.send: send packet chan was closed", c.RemoteAddr())
