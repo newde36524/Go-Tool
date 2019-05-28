@@ -244,6 +244,7 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 					if err != nil {
 						c.option.Logger.Error(err)
 					}
+					c.rwc.SetWriteDeadline(time.Now().Add(c.option.WriteDataTimeOut))
 					_, err = c.rwc.Write(sendData)
 					if err != nil {
 						c.handle.OnSendError(c, packet, err)
