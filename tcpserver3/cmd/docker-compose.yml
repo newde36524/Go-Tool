@@ -1,0 +1,8 @@
+version: '2.1'
+
+services:
+  tcpserver:
+    image: tcpserver
+    build: .
+    ports:
+      - 12336:12336

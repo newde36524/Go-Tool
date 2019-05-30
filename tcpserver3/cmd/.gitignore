@@ -1,0 +1,4 @@
+*.exe
+/output
+/release
+/cmd
