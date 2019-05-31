@@ -16,7 +16,7 @@ type TCPHandle struct {
 }
 
 //ReadPacket .
-func (TCPHandle) ReadPacket(conn *tcp.Conn) tcp.Packet {
+func (TCPHandle) ReadPacket(conn *tcp.Conn, next func()) tcp.Packet {
 	//todo 定义读取数据帧的规则
 	b := make([]byte, 1024)
 	n, err := conn.Read(b)
@@ -36,13 +36,13 @@ func (TCPHandle) ReadPacket(conn *tcp.Conn) tcp.Packet {
 }
 
 //OnConnection .
-func (TCPHandle) OnConnection(conn *tcp.Conn) {
+func (TCPHandle) OnConnection(conn *tcp.Conn, next func()) {
 	//todo 连接建立时处理,用于一些建立连接时,需要主动下发数据包的场景,可以在这里开启心跳协程,做登录验证等等
 	logs.Infof("%s: 对方好像对你很感兴趣呦~~", conn.RemoteAddr())
 }
 
 //OnMessage .
-func (TCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet) {
+func (TCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet, next func()) {
 	//todo 处理接收的包
 	sendP := &Packet{}
 	if p != nil {
@@ -53,26 +53,26 @@ func (TCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet) {
 }
 
 //OnClose .
-func (TCPHandle) OnClose(state tcp.ConnState) {
+func (TCPHandle) OnClose(state tcp.ConnState, next func()) {
 	logs.Infof("对方好像撤退了呦~~,连接状态:%s", state.String())
 }
 
 //OnTimeOut .
-func (TCPHandle) OnTimeOut(conn *tcp.Conn, code tcp.TimeOutState) {
+func (TCPHandle) OnTimeOut(conn *tcp.Conn, code tcp.TimeOutState, next func()) {
 	logs.Infof("%s: 对方好像在做一些灰暗的事情呢~~,超时类型:%d", conn.RemoteAddr(), code)
 }
 
 //OnPanic .
-func (TCPHandle) OnPanic(conn *tcp.Conn, err error) {
+func (TCPHandle) OnPanic(conn *tcp.Conn, err error, next func()) {
 	logs.Errorf("%s: 对方好像发生了一些不得了的事情哦~~,错误信息:%s", conn.RemoteAddr(), err)
 }
 
 //OnSendError .
-func (TCPHandle) OnSendError(conn *tcp.Conn, packet tcp.Packet, err error) {
+func (TCPHandle) OnSendError(conn *tcp.Conn, packet tcp.Packet, err error, next func()) {
 	logs.Errorf("%s: 发送数据的时间好像有点久诶~~,错误信息:%s", conn.RemoteAddr(), err)
 }
 
 //OnRecvError .
-func (TCPHandle) OnRecvError(conn *tcp.Conn, err error) {
+func (TCPHandle) OnRecvError(conn *tcp.Conn, err error, next func()) {
 	logs.Errorf("%s: 接收数据的时间好像有点久诶~~,错误信息:%s", conn.RemoteAddr(), err)
 }
