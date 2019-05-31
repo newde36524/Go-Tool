@@ -22,27 +22,33 @@ type Server struct {
 //New new server
 //@addr local address
 //@connOption connection options
-func New(addr string, connOption ConnOption) (*Server, error) {
+func New(addr string, connOption ConnOption) (srv *Server, err error) {
 	// 根据服务器开启多CPU功能
 	// runtime.GOMAXPROCS(runtime.NumCPU())
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
-		return nil, err
+		return
 	}
 	listener, err := net.ListenTCP("tcp", tcpAddr)
 	if err != nil {
-		return nil, err
+		return
 	}
-	return &Server{
+	srv = &Server{
 		tcpListener: listener,
 		connOption:  connOption,
-	}, nil
+	}
+	srv.Use(&DefaultTCPHandle{})
+	return
 }
 
 //Use middleware
 func (s *Server) Use(h TCPHandle) {
 	tree := NewCoreTCPHandle(h)
-	s.pipe = tree.Link(tree)
+	if s.pipe != nil {
+		s.pipe = s.pipe.Link(tree)
+	} else {
+		s.pipe = tree
+	}
 }
 
 //Binding start server

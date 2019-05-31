@@ -36,7 +36,8 @@ func main() {
 	if err != nil {
 		logs.Error(err)
 	}
-	server.Use(customer.TCPHandle{})
+	server.Use(customer.TCPHandleA{})
+	server.Use(customer.TCPHandleB{})
 	server.Binding()
 	logs.Infof("服务器开始监听...  监听地址:%s", address)
 	fmt.Scanln()

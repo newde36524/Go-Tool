@@ -12,6 +12,38 @@ type TCPHandle interface {
 	OnRecvError(conn *Conn, err error, next func())                //连接数据接收异常
 }
 
+//DefaultTCPHandle 默认TCPHandle实现类
+type DefaultTCPHandle struct {
+	TCPHandle
+}
+
+//ReadPacket .
+func (h *DefaultTCPHandle) ReadPacket(conn *Conn, next func()) Packet {
+	next()
+	return nil
+}
+
+//OnConnection .
+func (h *DefaultTCPHandle) OnConnection(conn *Conn, next func()) { next() }
+
+//OnMessage .
+func (h *DefaultTCPHandle) OnMessage(conn *Conn, p Packet, next func()) { next() }
+
+//OnClose .
+func (h *DefaultTCPHandle) OnClose(state ConnState, next func()) { next() }
+
+//OnTimeOut .
+func (h *DefaultTCPHandle) OnTimeOut(conn *Conn, code TimeOutState, next func()) { next() }
+
+//OnPanic .
+func (h *DefaultTCPHandle) OnPanic(conn *Conn, err error, next func()) { next() }
+
+//OnRecvError .
+func (h *DefaultTCPHandle) OnRecvError(conn *Conn, err error, next func()) { next() }
+
+//OnSendError .
+func (h *DefaultTCPHandle) OnSendError(conn *Conn, p Packet, err error, next func()) { next() }
+
 /*
 	issure:
 	1:  无法得知在接口的接口实现方法中调用next知否能够调用下一个接口同样的接口方法
@@ -31,6 +63,8 @@ type CoreTCPHandle struct {
 func NewCoreTCPHandle(h TCPHandle) *CoreTCPHandle {
 	return &CoreTCPHandle{
 		handle: h,
+		prev:   nil,
+		next:   nil,
 	}
 }
 
@@ -43,18 +77,24 @@ func (h *CoreTCPHandle) Link(next *CoreTCPHandle) *CoreTCPHandle {
 
 //First 获取传入节点链路中第一个节点
 func First(curr *CoreTCPHandle) *CoreTCPHandle {
-	if curr.prev != nil {
-		First(curr.prev)
+	for {
+		if curr.prev != nil {
+			curr = curr.prev
+		} else {
+			return curr
+		}
 	}
-	return curr
 }
 
 //Last 获取传入节点链路中最后一个节点
 func Last(curr *CoreTCPHandle) *CoreTCPHandle {
-	if curr.next != nil {
-		Last(curr.next)
+	for {
+		if curr.next != nil {
+			curr = curr.next
+		} else {
+			return curr
+		}
 	}
-	return curr
 }
 
 //Next 获取当前节点的下一个节点
@@ -63,21 +103,37 @@ func (h *CoreTCPHandle) Next() *CoreTCPHandle { return h.next }
 //Prev 获取当前节点的上一个节点
 func (h *CoreTCPHandle) Prev() *CoreTCPHandle { return h.prev }
 
+//ReadPacket .
 func (h *CoreTCPHandle) ReadPacket(conn *Conn, next func()) Packet {
-	return h.handle.ReadPacket(conn, next)
+	p := h.handle.ReadPacket(conn, next)
+	return p
 }
+
+//OnConnection .
 func (h *CoreTCPHandle) OnConnection(conn *Conn, next func()) { h.handle.OnConnection(conn, next) }
+
+//OnMessage .
 func (h *CoreTCPHandle) OnMessage(conn *Conn, p Packet, next func()) {
 	h.handle.OnMessage(conn, p, next)
 }
+
+//OnClose .
 func (h *CoreTCPHandle) OnClose(state ConnState, next func()) { h.handle.OnClose(state, next) }
+
+//OnTimeOut .
 func (h *CoreTCPHandle) OnTimeOut(conn *Conn, code TimeOutState, next func()) {
 	h.handle.OnTimeOut(conn, code, next)
 }
+
+//OnPanic .
 func (h *CoreTCPHandle) OnPanic(conn *Conn, err error, next func()) { h.handle.OnPanic(conn, err, next) }
+
+//OnRecvError .
 func (h *CoreTCPHandle) OnRecvError(conn *Conn, err error, next func()) {
 	h.handle.OnRecvError(conn, err, next)
 }
+
+//OnSendError .
 func (h *CoreTCPHandle) OnSendError(conn *Conn, p Packet, err error, next func()) {
 	h.handle.OnSendError(conn, p, err, next)
 }

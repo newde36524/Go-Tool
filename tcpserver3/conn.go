@@ -218,8 +218,19 @@ func (c *Conn) readPacket() <-chan Packet {
 		default:
 		}
 		var next func()
-		next = c.next(func(h *CoreTCPHandle) { h.ReadPacket(c, next) })
-		p := c.handle.ReadPacket(c, next)
+		var p Packet
+		next = c.next(func(h *CoreTCPHandle) {
+			_p := h.ReadPacket(c, next)
+			//防止内部调用next()方法重复覆盖p的值
+			//当前机制保证在管道处理流程中,只要有一个handle的ReadPacket方法返回值不为nil时才有效,之后无效
+			if _p != nil && p != nil {
+				panic("禁止在管道链路中重复读取生成Packet,在管道中读取数据帧，只能有一个管道返回Packet，其余只能返回nil")
+			}
+			if _p != nil && p == nil {
+				p = _p
+			}
+		})
+		c.handle.ReadPacket(c, next)
 		result <- p
 	})
 	return result
