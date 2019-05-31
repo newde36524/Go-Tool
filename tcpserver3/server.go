@@ -16,7 +16,7 @@ type Component func(middle Middleware) Middleware
 type Server struct {
 	tcpListener *net.TCPListener //TCP监听对象
 	connOption  ConnOption       //连接配置项
-	pipe        []TCPHandle      //连接处理管道
+	pipe        *CoreTCPHandle   //连接处理管道
 }
 
 //New new server
@@ -41,7 +41,8 @@ func New(addr string, connOption ConnOption) (*Server, error) {
 
 //Use middleware
 func (s *Server) Use(h TCPHandle) {
-	s.pipe = append(s.pipe, h)
+	tree := NewCoreTCPHandle(h)
+	s.pipe = tree.Link(tree)
 }
 
 //Binding start server
@@ -62,8 +63,7 @@ func (s *Server) Binding() {
 				<-time.After(time.Second)
 				continue
 			}
-			handle := NewCoreTCPHandle(s.pipe)
-			c := NewConn(conn, s.connOption, handle)
+			c := NewConn(conn, s.connOption, First(s.pipe))
 			c.UseDebug()
 			c.run()
 		}

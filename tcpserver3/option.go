@@ -12,5 +12,4 @@ type ConnOption struct {
 	WriteDataTimeOut time.Duration //发送数据超时时间
 	ReadDataTimeOut  time.Duration //接收数据超时时间
 	Logger           Logger        //日志打印对象
-	// Handle           func() TCPHandle //包处理对象
 }

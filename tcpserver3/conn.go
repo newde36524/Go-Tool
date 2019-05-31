@@ -11,7 +11,7 @@ import (
 type Conn struct {
 	rwc      net.Conn        //tcp原始连接对象
 	option   ConnOption      //连接配置项
-	handle   TCPHandle       //连接处理程序
+	handle   *CoreTCPHandle  //连接处理程序
 	state    ConnState       //连接状态
 	context  context.Context //全局上下文
 	recvChan <-chan Packet   //接收消息队列
@@ -22,7 +22,7 @@ type Conn struct {
 }
 
 //NewConn returns a wrapper of raw conn
-func NewConn(rwc net.Conn, option ConnOption, h TCPHandle) (result *Conn) {
+func NewConn(rwc net.Conn, option ConnOption, h *CoreTCPHandle) (result *Conn) {
 	result = &Conn{
 		rwc:    rwc,
 		option: option,
@@ -35,6 +35,11 @@ func NewConn(rwc net.Conn, option ConnOption, h TCPHandle) (result *Conn) {
 	}
 	result.context, result.cancel = context.WithCancel(context.Background())
 	return
+}
+
+//NextHandle 获取下一个连接处理程序,用于作为流式数据处理，实现类似AOP的效果
+func (c *Conn) NextHandle() TCPHandle {
+	return c.handle.Next()
 }
 
 //fnProxy 代理执行方法,用于检测执行超时
