@@ -8,30 +8,27 @@ import (
 
 //Server tcp服务器
 type Server struct {
-	tcpListener *net.TCPListener //TCP监听对象
-	connOption  ConnOption       //连接配置项
-	pipe        *CoreTCPHandle   //连接处理管道
+	listener   net.Listener   //TCP监听对象
+	connOption ConnOption     //连接配置项
+	pipe       *CoreTCPHandle //连接处理管道
 }
 
 //New new server
+//@network network 类型，具体参照ListenUDP ListenTCP等
 //@addr local address
 //@connOption connection options
-func New(addr string, connOption ConnOption) (srv *Server, err error) {
+func New(network, addr string, connOption ConnOption) (srv *Server, err error) {
 	// 根据服务器开启多CPU功能
 	// runtime.GOMAXPROCS(runtime.NumCPU())
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
-	if err != nil {
-		return
-	}
-	listener, err := net.ListenTCP("tcp", tcpAddr)
+	listener, err := net.Listen(network, addr)
 	if err != nil {
 		return
 	}
 	srv = &Server{
-		tcpListener: listener,
-		connOption:  connOption,
+		listener:   listener,
+		connOption: connOption,
 	}
-	srv.Use(&DefaultTCPHandle{})
+	srv.Use(&DefaultTCPHandle{}) //默认占用第一个管道并调用下一个管道
 	return
 }
 
@@ -48,7 +45,7 @@ func (s *Server) Use(h TCPHandle) {
 //Binding start server
 func (s *Server) Binding() {
 	go func() {
-		defer s.tcpListener.Close()
+		defer s.listener.Close()
 		defer func() {
 			defer recover()
 			if err := recover(); err != nil {
@@ -57,7 +54,7 @@ func (s *Server) Binding() {
 			}
 		}()
 		for {
-			conn, err := s.tcpListener.AcceptTCP()
+			conn, err := s.listener.Accept()
 			if err != nil {
 				s.connOption.Logger.Error(err)
 				<-time.After(time.Second)

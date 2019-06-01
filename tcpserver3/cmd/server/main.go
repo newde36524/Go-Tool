@@ -23,7 +23,7 @@ func init() {
 func main() {
 	address := "0.0.0.0:12336"
 	logger, err := tcp.NewDefaultLogger()
-	server, err := tcp.New(address, tcp.ConnOption{
+	opt := tcp.ConnOption{
 		MaxSendChanCount: 100,             //最大发包数
 		MaxRecvChanCount: 100,             //最大接包数
 		SendTimeOut:      1 * time.Minute, //发送消息包超时时间
@@ -32,7 +32,8 @@ func main() {
 		WriteDataTimeOut: 1 * time.Minute, //发送数据超时时间
 		ReadDataTimeOut:  1 * time.Minute, //接收数据超时时间
 		Logger:           logger,          //日志打印对象
-	})
+	}
+	server, err := tcp.New("tcp", address, opt)
 	if err != nil {
 		logs.Error(err)
 	}
