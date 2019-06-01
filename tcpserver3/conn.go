@@ -11,7 +11,7 @@ import (
 type Conn struct {
 	rwc      net.Conn        //tcp原始连接对象
 	option   ConnOption      //连接配置项
-	handle   *CoreTCPHandle  //连接处理程序
+	handle   *CoreHandle     //连接处理程序
 	state    ConnState       //连接状态
 	context  context.Context //全局上下文
 	recvChan <-chan Packet   //接收消息队列
@@ -22,7 +22,7 @@ type Conn struct {
 }
 
 //NewConn returns a wrapper of raw conn
-func NewConn(rwc net.Conn, option ConnOption, h *CoreTCPHandle) (result *Conn) {
+func NewConn(rwc net.Conn, option ConnOption, h *CoreHandle) (result *Conn) {
 	result = &Conn{
 		rwc:    rwc,
 		option: option,
@@ -37,24 +37,6 @@ func NewConn(rwc net.Conn, option ConnOption, h *CoreTCPHandle) (result *Conn) {
 	return
 }
 
-//方法解读:
-//框架希望实现类似管道处理，类似AOP的执行效果，
-//虽然TCPHandle接口的实现类可以在应用层通过装饰器等其他手段实现AOP效果，但如果封装进框架中会有难度。
-//这里采用链表的形式包装每个传进来的TCPHandle接口，并实现链式查找。
-//框架遇到的问题是，在接口实现的方法内部，并不知道当前是哪个方法，所以希望这个接口的当前方法调用下一个接口的当前方法，有困难。
-//这里采用闭包的形式，在框架的每一处调用接口方法的地方都创建一个闭包，并传入回调，把返回的方法再次传递给接口方法，
-//那么每个接口方法的实现通过调用传递进去的方法，能各自访问各自创建的闭包，从而实现管道调用之间不会互相影响，
-//至此完成管道的处理流程，关键是闭包的应用
-//next 获取下一个连接处理程序,用于作为流式数据处理，实现类似AOP的效果
-func (c *Conn) next(h func(*CoreTCPHandle)) func() {
-	node := c.handle
-	fn := func() {
-		node = node.next
-		h(node)
-	}
-	return fn
-}
-
 //fnProxy 代理执行方法,用于检测执行超时
 func (c *Conn) fnProxy(fn func()) <-chan struct{} {
 	result := make(chan struct{}, 1)
@@ -64,8 +46,8 @@ func (c *Conn) fnProxy(fn func()) <-chan struct{} {
 			if err := recover(); err != nil {
 				defer recover()
 				var next func()
-				next = c.next(func(h *CoreTCPHandle) { h.OnPanic(c, err.(error), next) })
-				c.handle.OnPanic(c, err.(error), next)
+				next = c.handle.NextHandle(func(h *CoreHandle) { h.OnPanic(c, err.(error), next) })
+				next()
 				c.option.Logger.Error(string(debug.Stack()))
 			}
 		}()
@@ -81,8 +63,8 @@ func (c *Conn) safeFn(fn func()) {
 		if err := recover(); err != nil {
 			defer recover()
 			var next func()
-			next = c.next(func(h *CoreTCPHandle) { h.OnPanic(c, err.(error), next) })
-			c.handle.OnPanic(c, err.(error), next)
+			next = c.handle.NextHandle(func(h *CoreHandle) { h.OnPanic(c, err.(error), next) })
+			next()
 			c.option.Logger.Error(string(debug.Stack()))
 		}
 	}()
@@ -100,8 +82,8 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 	n, err = c.rwc.Read(b)
 	if err != nil {
 		var next func()
-		next = c.next(func(h *CoreTCPHandle) { h.OnRecvError(c, err, next) })
-		c.handle.OnRecvError(c, err, next)
+		next = c.handle.NextHandle(func(h *CoreHandle) { h.OnRecvError(c, err, next) })
+		next()
 	}
 	return
 }
@@ -125,25 +107,25 @@ func (c *Conn) Raw() net.Conn {
 func (c *Conn) run() {
 	c.recvChan = c.recv(c.option.MaxRecvChanCount)(c.heartBeat(c.option.RecvTimeOut, func() {
 		var next func()
-		next = c.next(func(h *CoreTCPHandle) { h.OnTimeOut(c, RecvTimeOutCode, next) })
-		c.handle.OnTimeOut(c, RecvTimeOutCode, next)
+		next = c.handle.NextHandle(func(h *CoreHandle) { h.OnTimeOut(c, RecvTimeOutCode, next) })
+		next()
 	}))
 	c.sendChan = c.send(c.option.MaxSendChanCount)(c.heartBeat(c.option.SendTimeOut, func() {
 		var next func()
-		next = c.next(func(h *CoreTCPHandle) { h.OnTimeOut(c, SendTimeOutCode, next) })
-		c.handle.OnTimeOut(c, SendTimeOutCode, next)
+		next = c.handle.NextHandle(func(h *CoreHandle) { h.OnTimeOut(c, SendTimeOutCode, next) })
+		next()
 	}))
 	c.handChan = c.message(1)(c.heartBeat(c.option.HandTimeOut, func() {
 		var next func()
-		next = c.next(func(h *CoreTCPHandle) { h.OnTimeOut(c, HandTimeOutCode, next) })
-		c.handle.OnTimeOut(c, HandTimeOutCode, next)
+		next = c.handle.NextHandle(func(h *CoreHandle) { h.OnTimeOut(c, HandTimeOutCode, next) })
+		next()
 	}))
 	go c.safeFn(func() {
 		select {
 		case <-c.fnProxy(func() {
 			var next func()
-			next = c.next(func(h *CoreTCPHandle) { h.OnConnection(c, next) })
-			c.handle.OnConnection(c, next)
+			next = c.handle.NextHandle(func(h *CoreHandle) { h.OnConnection(c, next) })
+			next()
 		}):
 		case <-time.After(c.option.SendTimeOut):
 			c.option.Logger.Debugf("%s: Conn.run: OnConnection funtion invoke used time was too long", c.RemoteAddr())
@@ -198,8 +180,8 @@ func (c *Conn) Close() {
 	c.state.Message = "conn is closed"
 	c.state.ComplateTime = time.Now()
 	var next func()
-	next = c.next(func(h *CoreTCPHandle) { h.OnClose(c.state, next) })
-	c.handle.OnClose(c.state, next)
+	next = c.handle.NextHandle(func(h *CoreHandle) { h.OnClose(c.state, next) })
+	next()
 	c.cancel()
 	// runtime.GC()         //强制GC      待定可能有问题
 	// debug.FreeOSMemory() //强制释放内存 待定可能有问题
@@ -219,7 +201,7 @@ func (c *Conn) readPacket() <-chan Packet {
 		}
 		var next func()
 		var p Packet
-		next = c.next(func(h *CoreTCPHandle) {
+		next = c.handle.NextHandle(func(h *CoreHandle) {
 			_p := h.ReadPacket(c, next)
 			//防止内部调用next()方法重复覆盖p的值
 			//当前机制保证在管道处理流程中,只要有一个handle的ReadPacket方法返回值不为nil时才有效,之后无效
@@ -230,7 +212,7 @@ func (c *Conn) readPacket() <-chan Packet {
 				p = _p
 			}
 		})
-		c.handle.ReadPacket(c, next)
+		next()
 		result <- p
 	})
 	return result
@@ -303,8 +285,8 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 					_, err = c.rwc.Write(sendData)
 					if err != nil {
 						var next func()
-						next = c.next(func(h *CoreTCPHandle) { h.OnSendError(c, packet, err, next) })
-						c.handle.OnSendError(c, packet, err, next)
+						next = c.handle.NextHandle(func(h *CoreHandle) { h.OnSendError(c, packet, err, next) })
+						next()
 					} else {
 						if c.isDebug {
 							c.option.Logger.Debugf("%s: Conn.send: send a packet", c.RemoteAddr())
@@ -341,8 +323,8 @@ func (c *Conn) message(maxHandNum int) func(<-chan struct{}) chan<- Packet {
 						break
 					}
 					var next func()
-					next = c.next(func(h *CoreTCPHandle) { h.OnMessage(c, p, next) })
-					c.handle.OnMessage(c, p, next)
+					next = c.handle.NextHandle(func(h *CoreHandle) { h.OnMessage(c, p, next) })
+					next()
 					if c.isDebug {
 						c.option.Logger.Debugf("%s: Conn.message: hand a packet", c.RemoteAddr())
 					}

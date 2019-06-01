@@ -8,9 +8,9 @@ import (
 
 //Server tcp服务器
 type Server struct {
-	listener   net.Listener   //TCP监听对象
-	connOption ConnOption     //连接配置项
-	pipe       *CoreTCPHandle //连接处理管道
+	listener   net.Listener //TCP监听对象
+	connOption ConnOption   //连接配置项
+	pipe       *CoreHandle  //连接处理管道
 }
 
 //New new server
@@ -28,13 +28,13 @@ func New(network, addr string, connOption ConnOption) (srv *Server, err error) {
 		listener:   listener,
 		connOption: connOption,
 	}
-	srv.Use(&DefaultTCPHandle{}) //默认占用第一个管道并调用下一个管道
+	// srv.Use(&DefaultTCPHandle{}) //默认占用第一个管道并调用下一个管道
 	return
 }
 
 //Use middleware
-func (s *Server) Use(h TCPHandle) {
-	tree := NewCoreTCPHandle(h)
+func (s *Server) Use(h Handle) {
+	tree := NewCoreHandle(h)
 	if s.pipe != nil {
 		s.pipe = s.pipe.Link(tree)
 	} else {
