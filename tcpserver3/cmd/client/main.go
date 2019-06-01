@@ -13,7 +13,7 @@ import (
 
 const (
 	head     byte   = 0x7E
-	serverIP string = "127.0.0.1:12336" //212.64.51.236
+	serverIP string = "120.78.88.79:12336" //212.64.51.236
 )
 
 //Packet .
