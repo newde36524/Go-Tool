@@ -6,12 +6,6 @@ import (
 	"time"
 )
 
-//Middleware 中间件
-type Middleware func(h TCPHandle)
-
-//Component 组件
-type Component func(middle Middleware) Middleware
-
 //Server tcp服务器
 type Server struct {
 	tcpListener *net.TCPListener //TCP监听对象
