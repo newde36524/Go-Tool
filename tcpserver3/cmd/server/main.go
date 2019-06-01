@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	tcp "github.com/newde36524/Go-Tool/tcpserver3"
+	srv "github.com/newde36524/Go-Tool/tcpserver3"
 	customer "github.com/newde36524/Go-Tool/tcpserver3/cmd/Server/customer"
 
 	"github.com/issue9/logs"
@@ -22,8 +22,8 @@ func init() {
 
 func main() {
 	address := "0.0.0.0:12336"
-	logger, err := tcp.NewDefaultLogger()
-	opt := tcp.ConnOption{
+	logger, err := srv.NewDefaultLogger()
+	opt := srv.ConnOption{
 		MaxSendChanCount: 100,             //最大发包数
 		MaxRecvChanCount: 100,             //最大接包数
 		SendTimeOut:      1 * time.Minute, //发送消息包超时时间
@@ -33,12 +33,12 @@ func main() {
 		ReadDataTimeOut:  1 * time.Minute, //接收数据超时时间
 		Logger:           logger,          //日志打印对象
 	}
-	server, err := tcp.New("tcp", address, opt)
+	server, err := srv.New("tcp", address, opt)
 	if err != nil {
 		logs.Error(err)
 	}
-	server.Use(customer.TCPHandleA{})
-	server.Use(customer.TCPHandleB{})
+	server.Use(customer.LogTCPHandle{})
+	server.Use(customer.TCPHandle{})
 	server.Binding()
 	logs.Infof("服务器开始监听...  监听地址:%s", address)
 	fmt.Scanln()
