@@ -39,16 +39,14 @@ func NewCoreHandle(h Handle) *CoreHandle {
 //那么每个接口方法的实现通过调用传递进去的方法，能各自访问各自创建的闭包，从而实现管道调用之间不会互相影响，
 //至此完成管道的处理流程，关键是闭包的应用
 func (h *CoreHandle) NextHandle(callback func(*CoreHandle)) func() {
-	node := h
-	fn := func() {
-		if node.next != nil {
-			node = node.next
-			callback(node.prev)
+	return func() {
+		if h.next != nil {
+			h = h.next
+			callback(h.prev)
 		} else {
-			callback(node)
+			callback(h)
 		}
 	}
-	return fn
 }
 
 //Link 为当前节点连接并返回下一个节点
