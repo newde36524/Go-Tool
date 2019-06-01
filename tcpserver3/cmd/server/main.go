@@ -6,7 +6,7 @@ import (
 	"time"
 
 	tcp "github.com/newde36524/Go-Tool/tcpserver3"
-	customer "github.com/newde36524/Go-Tool/tcpserver3/cmd/customer"
+	customer "github.com/newde36524/Go-Tool/tcpserver3/cmd/Server/customer"
 
 	"github.com/issue9/logs"
 )
