@@ -5,29 +5,29 @@ import (
 
 	"github.com/issue9/logs"
 
-	tcp "github.com/newde36524/Go-Tool/tcpserver3"
+	srv "github.com/newde36524/Go-Tool/tcpserver3"
 )
 
 //LogTCPHandle tcpserver使用示例,打印相关日志
 type LogTCPHandle struct {
-	tcp.TCPHandle
+	srv.TCPHandle
 	//可增加新的属性
 	//可增加全局属性，比如多个客户端连接可选择转发数据给其他连接，而增加一个全局map
 }
 
 //ReadPacket .
-func (LogTCPHandle) ReadPacket(conn *tcp.Conn, next func()) tcp.Packet {
+func (LogTCPHandle) ReadPacket(conn *srv.Conn, next func()) srv.Packet {
 	next()
 	return nil
 }
 
 //OnConnection .
-func (LogTCPHandle) OnConnection(conn *tcp.Conn, next func()) {
+func (LogTCPHandle) OnConnection(conn *srv.Conn, next func()) {
 	next()
 }
 
 //OnMessage .
-func (LogTCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet, next func()) {
+func (LogTCPHandle) OnMessage(conn *srv.Conn, p srv.Packet, next func()) {
 	startTime := time.Now()
 	next()
 	endTime := time.Now()
@@ -36,26 +36,26 @@ func (LogTCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet, next func()) {
 }
 
 //OnClose .
-func (LogTCPHandle) OnClose(state tcp.ConnState, next func()) {
+func (LogTCPHandle) OnClose(state srv.ConnState, next func()) {
 	next()
 }
 
 //OnTimeOut .
-func (LogTCPHandle) OnTimeOut(conn *tcp.Conn, code tcp.TimeOutState, next func()) {
+func (LogTCPHandle) OnTimeOut(conn *srv.Conn, code srv.TimeOutState, next func()) {
 	next()
 }
 
 //OnPanic .
-func (LogTCPHandle) OnPanic(conn *tcp.Conn, err error, next func()) {
+func (LogTCPHandle) OnPanic(conn *srv.Conn, err error, next func()) {
 	next()
 }
 
 //OnSendError .
-func (LogTCPHandle) OnSendError(conn *tcp.Conn, packet tcp.Packet, err error, next func()) {
+func (LogTCPHandle) OnSendError(conn *srv.Conn, packet srv.Packet, err error, next func()) {
 	next()
 }
 
 //OnRecvError .
-func (LogTCPHandle) OnRecvError(conn *tcp.Conn, err error, next func()) {
+func (LogTCPHandle) OnRecvError(conn *srv.Conn, err error, next func()) {
 	next()
 }

@@ -3,12 +3,12 @@ package customer
 import (
 	"context"
 
-	tcp "github.com/newde36524/Go-Tool/tcpserver3"
+	srv "github.com/newde36524/Go-Tool/tcpserver3"
 )
 
 //Packet .
 type Packet struct {
-	tcp.Packet
+	srv.Packet
 	data []byte
 }
 
