@@ -39,6 +39,7 @@ func main() {
 	}
 	server.Use(customer.LogHandle{})
 	server.Use(customer.RootHandle{})
+	server.UseDebug()
 	server.Binding()
 	logs.Infof("服务器开始监听...  监听地址:%s", address)
 	fmt.Scanln()

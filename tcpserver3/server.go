@@ -11,6 +11,7 @@ type Server struct {
 	listener   net.Listener //TCP监听对象
 	connOption ConnOption   //连接配置项
 	pipe       *CoreHandle  //连接处理管道
+	isDebug    bool         //是否开始debug日志
 }
 
 //New new server
@@ -42,6 +43,11 @@ func (s *Server) Use(h Handle) {
 	}
 }
 
+//UseDebug 开启debug日志
+func (s *Server) UseDebug() {
+	s.isDebug = true
+}
+
 //Binding start server
 func (s *Server) Binding() {
 	go func() {
@@ -61,7 +67,9 @@ func (s *Server) Binding() {
 				continue
 			}
 			c := NewConn(conn, s.connOption, First(s.pipe))
-			c.UseDebug()
+			if s.isDebug {
+				c.UseDebug()
+			}
 			c.run()
 		}
 	}()
