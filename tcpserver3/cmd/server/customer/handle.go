@@ -1,6 +1,7 @@
 package customer
 
 import (
+	"io"
 	"net"
 
 	srv "github.com/newde36524/Go-Tool/tcpserver3"
@@ -21,10 +22,17 @@ func (RootHandle) ReadPacket(conn *srv.Conn, next func()) srv.Packet {
 	b := make([]byte, 1024)
 	n, err := conn.Read(b)
 	if err != nil {
+		logs.Error(err)
+		//当客户端连接强制中断时,在wsl中err被识别为io.EOF  而在linux和windows中识别为net.Error
 		switch e := err.(type) {
 		case net.Error:
 			if !e.Timeout() {
 				logs.Error(err)
+				conn.Close()
+				return nil
+			}
+		default:
+			if err == io.EOF {
 				conn.Close()
 			}
 		}
