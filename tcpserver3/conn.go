@@ -105,11 +105,6 @@ func (c *Conn) Raw() net.Conn {
 
 //run 固定处理流程
 func (c *Conn) run() {
-	c.recvChan = c.recv(c.option.MaxRecvChanCount)(c.heartBeat(c.option.RecvTimeOut, func() {
-		var next func()
-		next = c.handle.NextHandle(func(h *CoreHandle) { h.OnTimeOut(c, RecvTimeOutCode, next) })
-		next()
-	}))
 	c.sendChan = c.send(c.option.MaxSendChanCount)(c.heartBeat(c.option.SendTimeOut, func() {
 		var next func()
 		next = c.handle.NextHandle(func(h *CoreHandle) { h.OnTimeOut(c, SendTimeOutCode, next) })
@@ -130,6 +125,11 @@ func (c *Conn) run() {
 		case <-time.After(c.option.SendTimeOut):
 			c.option.Logger.Debugf("%s: Conn.run: OnConnection funtion invoke used time was too long", c.RemoteAddr())
 		}
+		c.recvChan = c.recv(c.option.MaxRecvChanCount)(c.heartBeat(c.option.RecvTimeOut, func() {
+			var next func()
+			next = c.handle.NextHandle(func(h *CoreHandle) { h.OnTimeOut(c, RecvTimeOutCode, next) })
+			next()
+		}))
 		defer func() {
 			close(c.handChan)
 			if c.isDebug {
