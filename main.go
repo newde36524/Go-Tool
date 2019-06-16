@@ -26,11 +26,12 @@ func main() {
 	// TestRedis()
 	// TestMiddleware2()
 	// TestMiddleware3()
+	TestMiddleware4()
 	// TestTask()
-	err := fmt.Errorf("测试异常信息")
-	var err2 error
-	fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
-	fmt.Scanln()
+	// err := fmt.Errorf("测试异常信息")
+	// var err2 error
+	// fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
+	// fmt.Scanln()
 }
 
 //TestRedis .
@@ -180,6 +181,16 @@ func TestMiddleware3() {
 		fmt.Println("C2")
 	})
 	middleware.Invoke(111)
+}
+
+//TestMiddleware4 .
+func TestMiddleware4() {
+	middle.Do([]interface{}{1, 2, 3, 4}, func(o interface{}, next func()) {
+		fmt.Println("q")
+		fmt.Println(o)
+		next()
+		fmt.Println("w")
+	})
 }
 
 //TestTask .
