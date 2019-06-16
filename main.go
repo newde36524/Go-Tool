@@ -25,8 +25,8 @@ func main() {
 	// TestBulkRunFuncs2()
 	// TestRedis()
 	// TestMiddleware2()
-	// TestMiddleware3()
-	TestMiddleware4()
+	TestMiddleware3()
+	// TestMiddleware4()
 	// TestTask()
 	// err := fmt.Errorf("测试异常信息")
 	// var err2 error
