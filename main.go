@@ -25,8 +25,9 @@ func main() {
 	// TestBulkRunFuncs2()
 	// TestRedis()
 	// TestMiddleware2()
-	TestMiddleware3()
+	// TestMiddleware3()
 	// TestMiddleware4()
+	TestMiddleware5()
 	// TestTask()
 	// err := fmt.Errorf("测试异常信息")
 	// var err2 error
@@ -191,6 +192,30 @@ func TestMiddleware4() {
 		next()
 		fmt.Println("w")
 	})
+}
+
+//TestMiddleware5 .
+func TestMiddleware5() {
+	middleware := new(middle.Middleware5)
+	middleware.Use(func(o interface{}, next func()) {
+		fmt.Println("A1")
+		fmt.Println(o)
+		next()
+		fmt.Println("A2")
+	})
+	middleware.Use(func(o interface{}, next func()) {
+		fmt.Println("B1")
+		fmt.Println(o)
+		next()
+		fmt.Println("B2")
+	})
+	middleware.Use(func(o interface{}, next func()) {
+		fmt.Println("C1")
+		fmt.Println(o)
+		next()
+		fmt.Println("C2")
+	})
+	middleware.Invoke(111)
 }
 
 //TestTask .
