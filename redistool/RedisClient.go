@@ -181,3 +181,14 @@ func (redisClient *RedisClient) Subscript2(onMessage func(string), channel strin
 	}
 	return err
 }
+
+//ReConnect 重新建立并替换redis连接,可用于断线重连
+func (redisClient *RedisClient) ReConnect() (err error) {
+	redisClient.c.Close()
+	conn, err := redisClient.create()
+	if err != nil {
+		return
+	}
+	redisClient.c = conn
+	return
+}
