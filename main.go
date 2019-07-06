@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"runtime/debug"
 	"time"
@@ -9,6 +10,7 @@ import (
 	middle "github.com/newde36524/Go-Tool/Middleware"
 	"github.com/newde36524/Go-Tool/arraytool"
 	"github.com/newde36524/Go-Tool/bulkruntool"
+	"github.com/newde36524/Go-Tool/filetool"
 	"github.com/newde36524/Go-Tool/redistool"
 	"github.com/newde36524/Go-Tool/task"
 )
@@ -27,12 +29,13 @@ func main() {
 	// TestMiddleware2()
 	// TestMiddleware3()
 	// TestMiddleware4()
-	TestMiddleware5()
+	// TestMiddleware5()
 	// TestTask()
 	// err := fmt.Errorf("测试异常信息")
 	// var err2 error
 	// fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
 	// fmt.Scanln()
+	TestReadLines()
 }
 
 //TestRedis .
@@ -43,10 +46,10 @@ func TestRedis() {
 			debug.PrintStack()
 		}
 	}()
-	client := redistool.NewRedisClient(&redistool.RedisClientOption{
+	client := redistool.NewRedisClient("127.0.0.1:6379", &redistool.RedisClientOption{
 		// Password: "123456",
 	})
-	err := client.Connect("127.0.0.1:6379")
+	err := client.Connect()
 	if err != nil {
 		logs.Error(err)
 	}
@@ -239,5 +242,11 @@ func TestTask() {
 			fmt.Println(temp)
 		})
 	}
+}
 
+func TestReadLines() {
+	lines := filetool.ReadLines(context.Background(), "C:\\Users\\SuperMan\\Desktop\\company\\FeeStatistics\\go\\fileUpdate\\datafile\\MERCHANT.DEL")
+	for line := range lines {
+		fmt.Println(line)
+	}
 }
