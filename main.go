@@ -245,7 +245,7 @@ func TestTask() {
 }
 
 func TestReadLines() {
-	lines := filetool.ReadLines(context.Background(), "C:\\Users\\SuperMan\\Desktop\\company\\FeeStatistics\\go\\fileUpdate\\datafile\\MERCHANT.DEL")
+	lines := filetool.ReadLines(context.Background(), "")
 	for line := range lines {
 		fmt.Println(line)
 	}
