@@ -3,7 +3,6 @@ package middleware
 //Middleware3 中间件
 type Middleware3 struct {
 	funcs   []func(context interface{}, next func())
-	index   int
 	context interface{}
 }
 
@@ -15,12 +14,13 @@ func (m *Middleware3) Use(f func(context interface{}, next func())) {
 
 //Invoke 调用中间件
 func (m *Middleware3) Invoke(context interface{}) {
+	index := 0
 	m.context = context
 	var next func()
 	next = func() {
-		if m.index < len(m.funcs) {
-			m.index++
-			m.funcs[m.index-1](m.context, next)
+		if index < len(m.funcs) {
+			index++
+			m.funcs[index-1](m.context, next)
 		}
 	}
 	next()

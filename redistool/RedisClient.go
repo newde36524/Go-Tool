@@ -32,29 +32,31 @@ type RedisClient struct {
 }
 
 //NewRedisClient 实例化Redis客户端新实例
+//@address Redis服务器地址 "ip:port"
 //@option Redis客户端配置
-func NewRedisClient(option *RedisClientOption) *RedisClient {
+func NewRedisClient(address string, option *RedisClientOption) *RedisClient {
 	return &RedisClient{
 		option: option,
+		addr:   address,
 	}
 }
 
-//Connect 连接Redis服务器 "ip:port"
-func (redisClient *RedisClient) Connect(addr string) error {
-	redisClient.Close() //可关闭旧连接，连接新地址
-	redisClient.addr = addr
+//Connect 连接Redis服务器
+func (redisClient *RedisClient) Connect() (err error) {
+	redisClient.c.Close()
 	conn, err := redisClient.create()
 	if err != nil {
-		logs.Error(err)
+		return
 	}
 	redisClient.c = conn
-	return err
+	return
 }
 
 //Clone 相同的配置创建一个新的RedisClient实例
-func (redisClient *RedisClient) Clone() (client *RedisClient, err error) {
+func (redisClient *RedisClient) Clone() (client *RedisClient) {
 	client = new(RedisClient)
 	client.option = redisClient.option
+	client.addr = redisClient.addr
 	return
 }
 
@@ -154,7 +156,7 @@ func (redisClient *RedisClient) Subscript(onMessage func(string), channel string
 }
 
 //Subscript2 订阅
-func (redisClient *RedisClient) Subscript2(onMessage func(string), channel string, onError func(error)) error {
+func (redisClient *RedisClient) Subscript2(onMessage func(string), channel string, onError func(*RedisClient, error)) error {
 	conn, err := redisClient.create()
 	if err != nil {
 		return err
@@ -171,7 +173,7 @@ func (redisClient *RedisClient) Subscript2(onMessage func(string), channel strin
 					logs.Infof("%s: %s %d\n", v.Channel, v.Kind, v.Count)
 				case error:
 					if onError != nil {
-						onError(v)
+						onError(redisClient, v)
 					}
 					psc.Close()
 					return

@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"runtime/debug"
-	"strconv"
 	"time"
 
 	"github.com/issue9/logs"
 	middle "github.com/newde36524/Go-Tool/Middleware"
 	"github.com/newde36524/Go-Tool/arraytool"
 	"github.com/newde36524/Go-Tool/bulkruntool"
+	"github.com/newde36524/Go-Tool/filetool"
 	"github.com/newde36524/Go-Tool/redistool"
 	"github.com/newde36524/Go-Tool/task"
 )
@@ -27,19 +28,14 @@ func main() {
 	// TestRedis()
 	// TestMiddleware2()
 	// TestMiddleware3()
+	// TestMiddleware4()
+	// TestMiddleware5()
 	// TestTask()
 	// err := fmt.Errorf("测试异常信息")
 	// var err2 error
 	// fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
-
-	v := "3.1415926535"
-	s1, _ := strconv.ParseFloat(v, 64)
-	fmt.Println(s1)
-	// fmt.Println(binary.LittleEndian.Uint32(b))
-	// fmt.Printf("%f2 \n", float32(binary.LittleEndian.Uint32(b)))
-
-	// fmt.Println(binary.LittleEndian.Uint32(b))
 	// fmt.Scanln()
+	TestReadLines()
 }
 
 //TestRedis .
@@ -50,10 +46,10 @@ func TestRedis() {
 			debug.PrintStack()
 		}
 	}()
-	client := redistool.NewRedisClient(&redistool.RedisClientOption{
+	client := redistool.NewRedisClient("127.0.0.1:6379", &redistool.RedisClientOption{
 		// Password: "123456",
 	})
-	err := client.Connect("127.0.0.1:6379")
+	err := client.Connect()
 	if err != nil {
 		logs.Error(err)
 	}
@@ -191,6 +187,40 @@ func TestMiddleware3() {
 	middleware.Invoke(111)
 }
 
+//TestMiddleware4 .
+func TestMiddleware4() {
+	middle.Do([]interface{}{1, 2, 3, 4}, func(o interface{}, next func()) {
+		fmt.Println("q")
+		fmt.Println(o)
+		next()
+		fmt.Println("w")
+	})
+}
+
+//TestMiddleware5 .
+func TestMiddleware5() {
+	middleware := new(middle.Middleware5)
+	middleware.Use(func(o interface{}, next func()) {
+		fmt.Println("A1")
+		fmt.Println(o)
+		next()
+		fmt.Println("A2")
+	})
+	middleware.Use(func(o interface{}, next func()) {
+		fmt.Println("B1")
+		fmt.Println(o)
+		next()
+		fmt.Println("B2")
+	})
+	middleware.Use(func(o interface{}, next func()) {
+		fmt.Println("C1")
+		fmt.Println(o)
+		next()
+		fmt.Println("C2")
+	})
+	middleware.Invoke(111)
+}
+
 //TestTask .
 func TestTask() {
 	task.Run(func() {
@@ -212,5 +242,11 @@ func TestTask() {
 			fmt.Println(temp)
 		})
 	}
+}
 
+func TestReadLines() {
+	lines := filetool.ReadLines(context.Background(), "")
+	for line := range lines {
+		fmt.Println(line)
+	}
 }
