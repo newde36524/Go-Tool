@@ -17,11 +17,11 @@ import (
 // @rerurn 读取到的文件数据包 @bs 读取到的数据 @n 有效数据长度  @e 表示读取异常
 func ReadPagingFile(pagIndex, pagSize, off int, filePath string) (bs []byte, n int, e error) {
 	file, err := os.Open(filePath)
+	defer file.Close()
 	if err != nil {
 		return nil, 0, err
 	}
 	bs, n, e = ReadPagingBuffer(pagIndex, pagSize, off, file)
-	defer file.Close()
 	return
 }
 
