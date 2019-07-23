@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"github.com/issue9/logs"
@@ -27,10 +28,18 @@ func main() {
 	// TestMiddleware2()
 	// TestMiddleware3()
 	// TestTask()
-	err := fmt.Errorf("测试异常信息")
-	var err2 error
-	fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
-	fmt.Scanln()
+	// err := fmt.Errorf("测试异常信息")
+	// var err2 error
+	// fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
+
+	v := "3.1415926535"
+	s1, _ := strconv.ParseFloat(v, 64)
+	fmt.Println(s1)
+	// fmt.Println(binary.LittleEndian.Uint32(b))
+	// fmt.Printf("%f2 \n", float32(binary.LittleEndian.Uint32(b)))
+
+	// fmt.Println(binary.LittleEndian.Uint32(b))
+	// fmt.Scanln()
 }
 
 //TestRedis .
