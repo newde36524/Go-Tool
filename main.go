@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"runtime/debug"
@@ -35,7 +36,8 @@ func main() {
 	// var err2 error
 	// fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
 	// fmt.Scanln()
-	TestReadLines()
+	// TestReadLines()
+	TestReadPagingBuffer()
 }
 
 //TestRedis .
@@ -248,5 +250,17 @@ func TestReadLines() {
 	lines := filetool.ReadLines(context.Background(), "")
 	for line := range lines {
 		fmt.Println(line)
+	}
+}
+
+func TestReadPagingBuffer() {
+	data := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	for i := 0; i < len(data); i++ {
+		reader := bytes.NewReader(data)
+		bs, n, e := filetool.ReadPagingBuffer(i, 3, 0, reader)
+		if e != nil {
+			break
+		}
+		fmt.Println(bs[:n], n, e)
 	}
 }

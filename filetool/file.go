@@ -3,6 +3,7 @@ package filetool
 import (
 	"bufio"
 	"context"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,33 +14,40 @@ import (
 // @pagIndex 表示数据包的下标
 // @pagSize 表示一次获取的数据包大小
 // @filePath 表示文件路径
-// @rerurn 读取到的文件数据包 @[]byte 读取到的数据 @int 有效数据长度  @error 表示读取异常
-func ReadPagingFile(pagIndex int, pagSize int, off int, filePath string) ([]byte, int, error) {
-	var resultData []byte   //返回数据
-	var resultDataSize int  //有效数据长度
-	var isRemenberSize bool //是否已记住
+// @rerurn 读取到的文件数据包 @bs 读取到的数据 @n 有效数据长度  @e 表示读取异常
+func ReadPagingFile(pagIndex, pagSize, off int, filePath string) (bs []byte, n int, e error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, resultDataSize, err
+		return nil, 0, err
 	}
+	bs, n, e = ReadPagingBuffer(pagIndex, pagSize, off, file)
 	defer file.Close()
-	bufReader := bufio.NewReader(file)
+	return
+}
+
+//ReadPagingBuffer 分段读取数据
+// @pagIndex 表示数据包的下标
+// @pagSize 表示一次获取的数据包大小
+// @filePath 表示文件路径
+// @rerurn 读取到的文件数据包 @bs 读取到的数据 @n 有效数据长度  @e 表示读取异常
+func ReadPagingBuffer(pagIndex, pagSize, off int, buffer io.Reader) (bs []byte, n int, e error) {
+	bs = make([]byte, pagSize)
+	bufReader := bufio.NewReader(buffer)
 	bufReader.Discard(off)
-	_, err = bufReader.Discard(pagIndex * pagSize) //跳过指定字节数
-	if err != nil {
-		return nil, resultDataSize, err
+	_, e = bufReader.Discard(pagIndex * pagSize) //跳过指定字节数
+	if e != nil {
+		return
 	}
 	for i := 0; i < pagSize; i++ {
 		b, e := bufReader.ReadByte()
 		if e != nil {
-			if !isRemenberSize {
-				isRemenberSize = true //只记录一次
-				resultDataSize = i
-			}
+			break
 		}
-		resultData = append(resultData, b) //读取超出接线默认用0补足
+		n = i + 1
+		// bs = append(bs, b) //读取超出接线默认用0补足
+		bs[i] = b
 	}
-	return resultData, resultDataSize, nil
+	return
 }
 
 // GetFileSize 获取文件大小
