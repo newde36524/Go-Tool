@@ -100,20 +100,24 @@ func ReadLines(ctx context.Context, filePath string) <-chan string {
 		panic(err)
 	}
 	reader := bufio.NewReader(file)
+	fn := func(line string) {
+		line = strings.TrimSpace(line)
+		line = strings.Trim(line, "\r")
+		select {
+		case <-ctx.Done():
+			return
+		case lineChan <- line:
+		}
+	}
 	go func() {
 		defer close(lineChan)
 		for {
 			line, err := reader.ReadString('\n')
 			if err != nil {
+				fn(line)
 				return
 			}
-			line = strings.TrimSpace(line)
-			line = strings.Trim(line, "\r")
-			select {
-			case <-ctx.Done():
-				return
-			case lineChan <- line:
-			}
+			fn(line)
 		}
 	}()
 	return lineChan

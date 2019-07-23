@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/issue9/logs"
@@ -36,8 +38,10 @@ func main() {
 	// var err2 error
 	// fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
 	// fmt.Scanln()
-	// TestReadLines()
-	TestReadPagingBuffer()
+	txtData, _ := ioutil.ReadFile("test.txt")
+	fmt.Println(strings.Split(string(txtData), "\r\n"))
+	TestReadLines()
+	// TestReadPagingBuffer()
 }
 
 //TestRedis .
@@ -247,7 +251,7 @@ func TestTask() {
 }
 
 func TestReadLines() {
-	lines := filetool.ReadLines(context.Background(), "")
+	lines := filetool.ReadLines(context.Background(), "test.txt")
 	for line := range lines {
 		fmt.Println(line)
 	}
