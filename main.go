@@ -3,16 +3,17 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
-	"io/ioutil"
 	"runtime/debug"
-	"strings"
 	"time"
 
 	"github.com/issue9/logs"
 	middle "github.com/newde36524/Go-Tool/Middleware"
 	"github.com/newde36524/Go-Tool/arraytool"
 	"github.com/newde36524/Go-Tool/bulkruntool"
+	"github.com/newde36524/Go-Tool/cryptotool"
 	"github.com/newde36524/Go-Tool/filetool"
 	"github.com/newde36524/Go-Tool/redistool"
 	"github.com/newde36524/Go-Tool/task"
@@ -38,9 +39,10 @@ func main() {
 	// var err2 error
 	// fmt.Printf("%s  %s  %#v", err2, err.Error(), err)
 	// fmt.Scanln()
-	txtData, _ := ioutil.ReadFile("test.txt")
-	fmt.Println(strings.Split(string(txtData), "\r\n"))
-	TestReadLines()
+	// txtData, _ := ioutil.ReadFile("test.txt")
+	// fmt.Println(strings.Split(string(txtData), "\r\n"))
+	// TestReadLines()
+	TestCer()
 	// TestReadPagingBuffer()
 }
 
@@ -267,4 +269,15 @@ func TestReadPagingBuffer() {
 		}
 		fmt.Println(bs[:n], n, e)
 	}
+}
+
+func TestCer() {
+
+	// cryptotool.GenRsaKey(128)
+
+	privateKey, err := rsa.GenerateKey(rand.Reader, 128)
+	logs.Error(err)
+	filePath := "./TestCer.cer"
+	cryptotool.CreateX509Cer(filePath, privateKey, time.Now(), 999999999*time.Second, "测试证书", []string{"zsk"}, []string{"localhost"}, []byte{1, 2, 3, 4})
+
 }
