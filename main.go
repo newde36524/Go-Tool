@@ -42,8 +42,12 @@ func main() {
 	// txtData, _ := ioutil.ReadFile("test.txt")
 	// fmt.Println(strings.Split(string(txtData), "\r\n"))
 	// TestReadLines()
-	TestCer()
+	// TestCer()
+	// TestRunTaskAndAscCallBack()
+	// TestRunTaskAndAscCallBack2()
+	TestCreateBulkRunFuncChannelAscCallBack()
 	// TestReadPagingBuffer()
+	<-time.After(time.Hour)
 }
 
 //TestRedis .
@@ -102,7 +106,7 @@ func TestBulkRunFuncs() {
 
 //TestBulkRunFuncs2 .
 func TestBulkRunFuncs2() {
-	ch := bulkruntool.CreateBulkRunFuncChannel(10, 10000)
+	ch := bulkruntool.CreateBulkRunFuncChannel(10, 10000, nil)
 	for index := 0; index < 10000; index++ {
 		temp := index
 		ch <- func() {
@@ -240,13 +244,12 @@ func TestTask() {
 	}).Continue(func() {
 		fmt.Println("4")
 	})
-
-	task := task.Run(func() {
+	t := task.Run(func() {
 		fmt.Println("666")
 	})
 	for index := 0; index < 100; index++ {
 		temp := index
-		task = task.Continue(func() {
+		t = t.Continue(func() {
 			fmt.Println(temp)
 		})
 	}
@@ -280,4 +283,46 @@ func TestCer() {
 	filePath := "./TestCer.cer"
 	cryptotool.CreateX509Cer(filePath, privateKey, time.Now(), 999999999*time.Second, "测试证书", []string{"zsk"}, []string{"localhost"}, []byte{1, 2, 3, 4})
 
+}
+
+func TestRunTaskAndAscCallBack() {
+	funcs := make([]func() interface{}, 0)
+	for index := 0; index < 100; index++ {
+		temp := index
+		funcs = append(funcs, func() interface{} {
+			return temp
+		})
+	}
+	bulkruntool.RunTaskAndAscCallBack(2, funcs, func(i interface{}) {
+		fmt.Println(i)
+	})
+}
+
+func TestRunTaskAndAscCallBack2() {
+	funcs := make(chan func() interface{}, 10)
+	go func() {
+		for index := 0; ; index++ {
+			temp := index
+			funcs <- func() interface{} {
+				return temp
+			}
+		}
+	}()
+	time.Sleep(1 * time.Second)
+	bulkruntool.RunTaskAndAscCallBack2(10, funcs, func(i interface{}) {
+		fmt.Println(i)
+	})
+}
+
+func TestCreateBulkRunFuncChannelAscCallBack() {
+	ch := bulkruntool.CreateBulkRunFuncChannelAscCallBack(10, 10, nil, func(i interface{}) {
+		fmt.Println(i)
+	})
+	for index := 0; index < 10000; index++ {
+		temp := index
+		ch <- func() interface{} {
+			time.Sleep(1 * time.Second)
+			return temp
+		}
+	}
 }
