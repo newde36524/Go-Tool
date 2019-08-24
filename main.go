@@ -43,9 +43,15 @@ func main() {
 	// fmt.Println(strings.Split(string(txtData), "\r\n"))
 	// TestReadLines()
 	// TestCer()
-	// TestRunTaskAndAscCallBack()
+	for index := 0; index < 20; index++ {
+		time.Sleep(1 * time.Second)
+		fmt.Println(index)
+	}
+	fmt.Println("============================")
+	TestRunTaskAndAscCallBack()
+	fmt.Println("============================")
 	// TestRunTaskAndAscCallBack2()
-	TestCreateBulkRunFuncChannelAscCallBack()
+	// TestCreateBulkRunFuncChannelAscCallBack()
 	// TestReadPagingBuffer()
 	<-time.After(time.Hour)
 }
@@ -287,13 +293,14 @@ func TestCer() {
 
 func TestRunTaskAndAscCallBack() {
 	funcs := make([]func() interface{}, 0)
-	for index := 0; index < 100; index++ {
+	for index := 0; index < 20; index++ {
 		temp := index
 		funcs = append(funcs, func() interface{} {
+			time.Sleep(1 * time.Second)
 			return temp
 		})
 	}
-	bulkruntool.RunTaskAndAscCallBack(2, funcs, func(i interface{}) {
+	bulkruntool.RunTaskAndAscCallBack(10, funcs, func(i interface{}) {
 		fmt.Println(i)
 	})
 }

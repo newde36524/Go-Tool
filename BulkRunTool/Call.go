@@ -5,13 +5,12 @@ import "sync"
 //RunTaskAndAscCallBack 启动指定数量的协程执行多个方法,并按顺序回调
 func RunTaskAndAscCallBack(maxTaskCount int, funcs []func() interface{}, callback func(interface{})) {
 	ch := make(chan struct{}, maxTaskCount)
-	ch2 := make(chan chan struct{}, maxTaskCount)
 	defer close(ch)
-	// defer close(ch2)
+	ch2 := make(chan chan struct{}, maxTaskCount)
 	once := sync.Once{}
 	for _, fn := range funcs {
 		ch <- struct{}{}
-		sign := make(chan struct{}, 0)
+		sign := make(chan struct{})
 		ch2 <- sign
 		once.Do(func() {
 			close(<-ch2)
@@ -21,7 +20,10 @@ func RunTaskAndAscCallBack(maxTaskCount int, funcs []func() interface{}, callbac
 			<-sign
 			callback(result)
 			close(<-ch2)
-			<-ch
+			_, ok := <-ch
+			if !ok && len(ch2) == 0 {
+				close(ch2)
+			}
 		}(fn, sign)
 	}
 }
@@ -29,14 +31,13 @@ func RunTaskAndAscCallBack(maxTaskCount int, funcs []func() interface{}, callbac
 //RunTaskAndAscCallBack2 启动指定数量的协程执行多个方法,并按顺序回调
 func RunTaskAndAscCallBack2(maxTaskCount int, funcs <-chan func() interface{}, callback func(interface{})) {
 	ch := make(chan struct{}, maxTaskCount)
-	ch2 := make(chan chan struct{}, maxTaskCount)
 	defer close(ch)
-	// defer close(ch2)
+	ch2 := make(chan chan struct{}, maxTaskCount)
 	once := sync.Once{}
 	for len(funcs) > 0 {
 		fn := <-funcs
 		ch <- struct{}{}
-		sign := make(chan struct{}, 0)
+		sign := make(chan struct{})
 		ch2 <- sign
 		once.Do(func() {
 			close(<-ch2)
@@ -46,7 +47,10 @@ func RunTaskAndAscCallBack2(maxTaskCount int, funcs <-chan func() interface{}, c
 			<-sign
 			callback(result)
 			close(<-ch2)
-			<-ch
+			_, ok := <-ch
+			if !ok && len(ch2) == 0 {
+				close(ch2)
+			}
 		}(fn, sign)
 	}
 }
@@ -118,7 +122,7 @@ func CreateBulkRunFuncChannelAscCallBack(maxTaskCount, maxFuncCount int, done <-
 				if !ok {
 					return
 				}
-				sign := make(chan struct{}, 0)
+				sign := make(chan struct{})
 				ch2 <- sign
 				once.Do(func() {
 					close(<-ch2)
@@ -129,7 +133,10 @@ func CreateBulkRunFuncChannelAscCallBack(maxTaskCount, maxFuncCount int, done <-
 					<-sign
 					callBack(result)
 					close(<-ch2)
-					<-ch
+					_, ok := <-ch
+					if !ok && len(ch2) == 0 {
+						close(ch2)
+					}
 				}(fn, callBack)
 			case <-done:
 				return
