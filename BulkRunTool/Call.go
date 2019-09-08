@@ -111,11 +111,9 @@ func CreateBulkRunFuncChannel(maxTaskCount, maxFuncCount int, done <-chan struct
 func CreateBulkRunFuncChannelAscCallBack(maxTaskCount, maxFuncCount int, done <-chan struct{}, callBack func(interface{})) chan<- func() interface{} {
 	funcs := make(chan func() interface{}, maxFuncCount)
 	go func(funcs chan func() interface{}, maxTaskCount int) {
-		ch := make(chan struct{}, maxTaskCount)
-		ch2 := make(chan chan struct{}, maxTaskCount)
+		ch := make(chan chan struct{}, maxTaskCount)
 		once := sync.Once{}
 		defer close(funcs)
-		defer close(ch)
 		for {
 			select {
 			case fn, ok := <-funcs:
@@ -123,20 +121,13 @@ func CreateBulkRunFuncChannelAscCallBack(maxTaskCount, maxFuncCount int, done <-
 					return
 				}
 				sign := make(chan struct{})
-				ch2 <- sign
-				once.Do(func() {
-					close(<-ch2)
-				})
-				ch <- struct{}{}
+				ch <- sign
+				once.Do(func() { close(<-ch) })
 				go func(fn func() interface{}, callBack func(interface{})) {
 					result := fn()
 					<-sign
+					defer close(<-ch)
 					callBack(result)
-					close(<-ch2)
-					_, ok := <-ch
-					if !ok && len(ch2) == 0 {
-						close(ch2)
-					}
 				}(fn, callBack)
 			case <-done:
 				return
