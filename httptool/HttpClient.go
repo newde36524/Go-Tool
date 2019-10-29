@@ -85,6 +85,7 @@ func (this *HttpClient) Form(url string, formItemList []FormItem) (string, error
 //http请求处理程序
 func (this *HttpClient) httpHandle(method *HttpMethod, url string, body io.Reader) (string, error) {
 	req, _ := http.NewRequest(method.method, url, body)
+	defer req.Body.Close()
 	for k, v := range this.Header {
 		req.Header.Add(k, v)
 	}
