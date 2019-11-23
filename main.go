@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/issue9/logs"
+
 	middle "github.com/newde36524/Go-Tool/Middleware"
 	"github.com/newde36524/Go-Tool/arraytool"
 	"github.com/newde36524/Go-Tool/bulkruntool"
@@ -43,16 +44,28 @@ func main() {
 	// fmt.Println(strings.Split(string(txtData), "\r\n"))
 	// TestReadLines()
 	// TestCer()
-	for index := 0; index < 20; index++ {
-		time.Sleep(1 * time.Second)
-		fmt.Println(index)
-	}
-	fmt.Println("============================")
-	TestRunTaskAndAscCallBack()
-	fmt.Println("============================")
+	// for index := 0; index < 20; index++ {
+	// 	time.Sleep(1 * time.Second)
+	// 	fmt.Println(index)
+	// }
+	// fmt.Println("============================")
+	// TestRunTaskAndAscCallBack()
+	// fmt.Println("============================")
 	// TestRunTaskAndAscCallBack2()
 	// TestCreateBulkRunFuncChannelAscCallBack()
 	// TestReadPagingBuffer()
+
+	ch := time.After(time.Second)
+	time.Sleep(time.Second)
+	fmt.Println(time.Now())
+	<-ch
+	fmt.Println(time.Now())
+
+
+
+
+
+
 	<-time.After(time.Hour)
 }
 
