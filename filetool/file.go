@@ -29,24 +29,15 @@ func ReadPagingFile(pagIndex, pagSize, off int, filePath string) (bs []byte, n i
 // @pagIndex 表示数据包的下标
 // @pagSize 表示一次获取的数据包大小
 // @filePath 表示文件路径
-// @rerurn 读取到的文件数据包 @bs 读取到的数据 @n 有效数据长度  @e 表示读取异常
-func ReadPagingBuffer(pagIndex, pagSize, off int, buffer io.Reader) (bs []byte, n int, e error) {
-	bs = make([]byte, pagSize)
+// @rerurn 读取到的文件数据包 @bs 读取到的数据 @n 有效数据长度  @err 表示读取异常
+func ReadPagingBuffer(pagIndex, pagSize, off int, buffer io.Reader) (bs []byte, n int, err error) {
 	bufReader := bufio.NewReader(buffer)
-	bufReader.Discard(off)
-	_, e = bufReader.Discard(pagIndex * pagSize) //跳过指定字节数
-	if e != nil {
+	_, err = bufReader.Discard(pagIndex*pagSize + off) //跳过指定字节数
+	if err != nil {
 		return
 	}
-	for i := 0; i < pagSize; i++ {
-		b, e := bufReader.ReadByte()
-		if e != nil {
-			break
-		}
-		n = i + 1
-		// bs = append(bs, b) //读取超出接线默认用0补足
-		bs[i] = b
-	}
+	bs = make([]byte, pagSize)
+	n, err = bufReader.Read(bs)
 	return
 }
 
