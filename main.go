@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/issue9/logs"
@@ -55,18 +57,51 @@ func main() {
 	// TestCreateBulkRunFuncChannelAscCallBack()
 	// TestReadPagingBuffer()
 
-	ch := time.After(time.Second)
-	time.Sleep(time.Second)
-	fmt.Println(time.Now())
-	<-ch
-	fmt.Println(time.Now())
+	// ch := time.After(time.Second)
+	// time.Sleep(time.Second)
+	// fmt.Println(time.Now())
+	// <-ch
+	// fmt.Println(time.Now())
 
+	{
+		fn := func(b []byte) {
+			b[0] = 1
+		}
+		bb := make([]byte, 2)
+		fmt.Println(bb)
+		fn(bb)
+		fmt.Println(bb)
+	}
 
+	{
+		fn := func(b []S) {
+			b[0] = S{"A"}
+		}
+		bb := make([]S, 2)
+		fmt.Println(bb)
+		fn(bb)
+		fmt.Println(bb)
+	}
 
-
-
+	str := "123456789"
+	reader := bufio.NewReader(strings.NewReader(str))
+	for {
+		i := 0
+		if bs, n, err := filetool.ReadPagingBuffer(0, 3, 1, reader); err == nil {
+			fmt.Println(n)
+			fmt.Println(bs)
+			i++
+		} else {
+			fmt.Println(err)
+			break
+		}
+	}
 
 	<-time.After(time.Hour)
+}
+
+type S struct {
+	data string
 }
 
 //TestRedis .
