@@ -56,7 +56,7 @@ func main() {
 	// TestRunTaskAndAscCallBack()
 	// fmt.Println("============================")
 	// TestRunTaskAndAscCallBack2()
-	// TestCreateBulkRunFuncChannelAscCallBack()
+	TestCreateBulkRunFuncChannelAscCallBack()
 	// TestReadPagingBuffer()
 
 	// ch := time.After(time.Second)
@@ -100,7 +100,7 @@ func main() {
 	// }
 
 	{
-		TestThrottle()
+		// TestThrottle()
 		// TestDebounce()
 	}
 
@@ -363,7 +363,7 @@ func TestRunTaskAndAscCallBack() {
 func TestRunTaskAndAscCallBack2() {
 	funcs := make(chan func() interface{}, 10)
 	go func() {
-		for index := 0; ; index++ {
+		for index := 0; index < 200; index++ {
 			temp := index
 			funcs <- func() interface{} {
 				return temp
