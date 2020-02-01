@@ -209,3 +209,32 @@ func (p *GoPoll) worker(delay time.Duration, task func()) {
 		}
 	}
 }
+
+func Poll(size int, forExit time.Duration) func(func()) error {
+	var (
+		work    chan func()   = make(chan func())
+		sem     chan struct{} = make(chan struct{}, size)
+		timeout time.Duration = forExit
+		worker                = func(delay time.Duration, task func()) {
+			defer func() { <-sem }()
+			timer := time.NewTimer(delay)
+			for {
+				task()
+				timer.Reset(delay)
+				select {
+				case task = <-work:
+				case <-timer.C:
+					return
+				}
+			}
+		}
+	)
+	return func(task func()) error {
+		select {
+		case work <- task:
+		case sem <- struct{}{}:
+			go worker(timeout, task)
+		}
+		return nil
+	}
+}

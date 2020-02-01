@@ -58,7 +58,8 @@ func main() {
 	// TestRunTaskAndAscCallBack2()
 	// TestCreateBulkRunFuncChannelAscCallBack()
 	// TestReadPagingBuffer()
-	TestGoPoll()
+	// TestGoPoll()
+	TestPoll()
 
 	// ch := time.After(time.Second)
 	// time.Sleep(time.Second)
@@ -424,6 +425,17 @@ func TestGoPoll() {
 	for i := 0; i < 10000; i++ {
 		temp := i
 		poll.Schedule(func() {
+			fmt.Println(temp)
+			time.Sleep(time.Second)
+		})
+	}
+}
+
+func TestPoll() {
+	Schedule := bulkruntool.Poll(10, 3*time.Second) //限制协程数量为10个,设置协程活动有效期
+	for i := 0; i < 10000; i++ {
+		temp := i
+		Schedule(func() {
 			fmt.Println(temp)
 			time.Sleep(time.Second)
 		})
