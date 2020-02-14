@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -112,4 +113,24 @@ func ReadLines(ctx context.Context, filePath string) <-chan string {
 		}
 	}()
 	return lineChan
+}
+
+//GetDirFullPath 获取当前程序所在目录
+func GetDirFullPath() (string, error) {
+	file, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return "", err
+	}
+	path, err := filepath.Abs(file)
+	if err != nil {
+		return "", err
+	}
+	index := strings.LastIndex(path, string(os.PathSeparator))
+	ret := path[:index]
+	return ret, nil
+}
+
+//GetDirFullPath2 获取当前程序所在目录
+func GetDirFullPath2() (string, error) {
+	return filepath.Abs("./")
 }

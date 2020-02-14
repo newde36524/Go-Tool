@@ -186,6 +186,25 @@ func NewGoPoll(size int, forExit time.Duration) *GoPoll {
 	}
 }
 
+//Grow .
+func (p *GoPoll) Grow(num int) error {
+	newSem := make(chan struct{}, num)
+loop:
+	for {
+		select {
+		case sign := <-p.sem:
+			select {
+			case newSem <- sign:
+			default:
+			}
+		default:
+			break loop
+		}
+	}
+	p.sem = newSem
+	return nil
+}
+
 //Schedule 把方法加入协程池并被执行
 func (p *GoPoll) Schedule(task func()) error {
 	select {
