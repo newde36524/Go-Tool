@@ -351,7 +351,13 @@ func (g *gItem) worker() {
 		case <-g.ctx.Done():
 			return
 		case task := <-g.tasks: //执行任务优先
-			timer.Reset(g.exp)
+			//timer.Reset(g.exp)
+			/*
+				这行注释就放在这里
+				1) 如果重置时间,那么会在任务全部处理完成后继续等待过期,虽然空闲等待是一种资源浪费,但这主要用于复用当前协程对任务队列的执行
+				2) 如果不重置时间,那么当前协程会在有效期内执行任务队列,但超过时间后协程只会创建给下一个任务队列
+				3) 个人认为,不重置时间可均衡各个任务队列之间的任务调度
+			*/
 			task()
 		case <-timer.C:
 			return
