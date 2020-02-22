@@ -318,19 +318,11 @@ func newgItem(ctx context.Context, taskNum int, exp time.Duration, onExit func()
 
 func (g *gItem) DoOrInChan(task func()) {
 	select {
-	case g.sign <- struct{}{}: //保证只会开启一个协程
-		go g.worker()
-	default:
-	}
-	select {
 	case <-g.ctx.Done():
-	case g.tasks <- task: //
+	case g.tasks <- task:
 	case g.sign <- struct{}{}:
 		go g.worker()
-		select {
-		case <-g.ctx.Done():
-		case g.tasks <- task:
-		}
+		g.DoOrInChan(task)
 	}
 }
 
