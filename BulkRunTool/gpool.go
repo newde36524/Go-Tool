@@ -63,10 +63,13 @@ func newgItem(ctx context.Context, taskNum int, exp time.Duration, onExit func()
 }
 
 func (g *gItem) DoOrInChan(task func()) bool {
-	select { //这里验证到在select中,case之间是随机的,并在所有case都阻塞后才会选择default路线
+	select {
 	case <-g.ctx.Done():
 		return false
-	case g.sign <- struct{}{}: //这里改为在新的select中,防止调用时随机到tasks case而不启动协程
+	default:
+	}
+	select {
+	case g.sign <- struct{}{}:
 		go g.worker()
 		runtime.Gosched()
 		return g.DoOrInChan(task)
@@ -84,9 +87,11 @@ func (g *gItem) DoOrInChan(task func()) bool {
 func (g *gItem) worker() {
 	timer := time.NewTimer(g.exp)
 	defer func() {
+		select {
+		case <-g.sign:
+		default:
+		}
 		timer.Stop()
-		close(g.tasks)
-		close(g.sign)
 		if g.onExit != nil {
 			g.onExit()
 		}
