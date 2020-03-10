@@ -1,6 +1,7 @@
 package reference
 
 import (
+	"sync"
 	"time"
 )
 
@@ -33,8 +34,21 @@ func Throttle(fn func(), delay time.Duration) func() {
 	}
 }
 
+func Throttle2(fn func(), delay time.Duration) func() {
+	tricker := time.NewTicker(delay)
+	once := sync.Once{}
+	return func() {
+		select {
+		case <-tricker.C:
+			fn()
+		default:
+			once.Do(fn)
+		}
+	}
+}
+
 //Debounce 防抖方法
-//等待一段时间后在调用,防止短时间内重复调用
+//超过时间间隔后才会被执行,防止短时间内重复调用
 func Debounce(fn func(), timeout time.Duration) func() {
 	timeOutCh := time.After(timeout)
 	sign := make(chan struct{}, 1)
@@ -60,7 +74,7 @@ func Debounce(fn func(), timeout time.Duration) func() {
 }
 
 //Debounce2 防抖方法
-//等待一段时间后在调用,防止短时间内重复调用
+//超过时间间隔后才会被执行,防止短时间内重复调用
 func Debounce2(fn func(), delay time.Duration) func() {
 	prev := time.Unix(0, 0)
 	return func() {
@@ -72,4 +86,60 @@ func Debounce2(fn func(), delay time.Duration) func() {
 		prev = curr // 可执行了之后，在刷新计时
 		fn()
 	}
+}
+
+//Debounce3 防抖方法
+//超过时间间隔后才会被执行,防止短时间内重复调用
+func Debounce3(fn func(), delay time.Duration) func() {
+	var timer *time.Timer
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			timer = time.AfterFunc(delay, fn)
+		})
+		timer.Reset(delay)
+	}
+}
+
+type throttleImpl struct {
+	once    sync.Once
+	fn      func()
+	tricker *time.Ticker
+}
+
+func NewThrottleImpl(delay time.Duration, fn func()) *throttleImpl {
+	return &throttleImpl{
+		fn:      fn,
+		tricker: time.NewTicker(delay),
+	}
+}
+
+func (t *throttleImpl) Do() {
+	select {
+	case <-t.tricker.C:
+		t.fn()
+	default:
+		t.once.Do(t.fn)
+	}
+}
+
+type debounceImpl struct {
+	timer *time.Timer
+	once  sync.Once
+	fn    func()
+	delay time.Duration
+}
+
+func NewDebounceImpl(delay time.Duration, fn func()) *debounceImpl {
+	return &debounceImpl{
+		fn:    fn,
+		delay: delay,
+	}
+}
+
+func (d *debounceImpl) Do() {
+	d.once.Do(func() {
+		d.timer = time.AfterFunc(d.delay, d.fn)
+	})
+	d.timer.Reset(d.delay)
 }

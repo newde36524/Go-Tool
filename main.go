@@ -7,8 +7,9 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	"net/textproto"
+	"os"
 	"runtime/debug"
-	"strings"
 	"time"
 
 	"github.com/issue9/logs"
@@ -19,6 +20,7 @@ import (
 	"github.com/newde36524/Go-Tool/cryptotool"
 	"github.com/newde36524/Go-Tool/filetool"
 	"github.com/newde36524/Go-Tool/redistool"
+	"github.com/newde36524/Go-Tool/reference"
 	"github.com/newde36524/Go-Tool/task"
 )
 
@@ -56,6 +58,8 @@ func main() {
 	// TestRunTaskAndAscCallBack2()
 	// TestCreateBulkRunFuncChannelAscCallBack()
 	// TestReadPagingBuffer()
+	// TestGoPoll()
+	TestPoll()
 
 	// ch := time.After(time.Second)
 	// time.Sleep(time.Second)
@@ -63,38 +67,43 @@ func main() {
 	// <-ch
 	// fmt.Println(time.Now())
 
-	{
-		fn := func(b []byte) {
-			b[0] = 1
-		}
-		bb := make([]byte, 2)
-		fmt.Println(bb)
-		fn(bb)
-		fmt.Println(bb)
-	}
+	// {
+	// 	fn := func(b []byte) {
+	// 		b[0] = 1
+	// 	}
+	// 	bb := make([]byte, 2)
+	// 	fmt.Println(bb)
+	// 	fn(bb)
+	// 	fmt.Println(bb)
+	// }
+
+	// {
+	// 	fn := func(b []S) {
+	// 		b[0] = S{"A"}
+	// 	}
+	// 	bb := make([]S, 2)
+	// 	fmt.Println(bb)
+	// 	fn(bb)
+	// 	fmt.Println(bb)
+	// }
+
+	// str := "123456789"
+	// reader := bufio.NewReader(strings.NewReader(str))
+	// for {
+	// 	i := 0
+	// 	if bs, n, err := filetool.ReadPagingBuffer(0, 3, 1, reader); err == nil {
+	// 		fmt.Println(n)
+	// 		fmt.Println(bs)
+	// 		i++
+	// 	} else {
+	// 		fmt.Println(err)
+	// 		break
+	// 	}
+	// }
 
 	{
-		fn := func(b []S) {
-			b[0] = S{"A"}
-		}
-		bb := make([]S, 2)
-		fmt.Println(bb)
-		fn(bb)
-		fmt.Println(bb)
-	}
-
-	str := "123456789"
-	reader := bufio.NewReader(strings.NewReader(str))
-	for {
-		i := 0
-		if bs, n, err := filetool.ReadPagingBuffer(0, 3, 1, reader); err == nil {
-			fmt.Println(n)
-			fmt.Println(bs)
-			i++
-		} else {
-			fmt.Println(err)
-			break
-		}
+		// TestThrottle()
+		// TestDebounce()
 	}
 
 	<-time.After(time.Hour)
@@ -356,7 +365,7 @@ func TestRunTaskAndAscCallBack() {
 func TestRunTaskAndAscCallBack2() {
 	funcs := make(chan func() interface{}, 10)
 	go func() {
-		for index := 0; ; index++ {
+		for index := 0; index < 200; index++ {
 			temp := index
 			funcs <- func() interface{} {
 				return temp
@@ -379,5 +388,56 @@ func TestCreateBulkRunFuncChannelAscCallBack() {
 			time.Sleep(1 * time.Second)
 			return temp
 		}
+	}
+}
+
+func TestThrottle() {
+	// fn := reference.Throttle2(func() {
+	// 	fmt.Println(time.Now())
+	// }, time.Second)
+	r := reference.NewThrottleImpl(time.Second, func() {
+		fmt.Println(time.Now())
+	})
+	rd := textproto.NewReader(bufio.NewReader(os.Stdin))
+	for {
+		rd.ReadLine()
+		r.Do()
+	}
+}
+
+func TestDebounce() {
+	// fn := reference.Debounce3(func() {
+	// 	fmt.Println(time.Now())
+	// }, time.Second)
+	r := reference.NewDebounceImpl(time.Second, func() {
+		fmt.Println(time.Now())
+	})
+	rd := textproto.NewReader(bufio.NewReader(os.Stdin))
+	for {
+		rd.ReadLine()
+		r.Do()
+	}
+}
+
+//TestGoPoll .
+func TestGoPoll() {
+	poll := bulkruntool.NewGoPoll(10, 3*time.Second) //限制协程数量为10个,设置协程活动有效期
+	for i := 0; i < 10000; i++ {
+		temp := i
+		poll.Schedule(func() {
+			fmt.Println(temp)
+			time.Sleep(time.Second)
+		})
+	}
+}
+
+func TestPoll() {
+	Schedule := bulkruntool.Poll(10, 3*time.Second) //限制协程数量为10个,设置协程活动有效期
+	for i := 0; i < 10000; i++ {
+		temp := i
+		Schedule(func() {
+			fmt.Println(temp)
+			time.Sleep(time.Second)
+		})
 	}
 }

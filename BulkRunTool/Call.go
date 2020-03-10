@@ -1,6 +1,9 @@
 package bulkruntool
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 //RunTaskAndAscCallBack 启动指定数量的协程执行多个方法,并按顺序回调
 func RunTaskAndAscCallBack(maxTaskCount int, funcs []func() interface{}, callback func(interface{})) {
@@ -113,7 +116,7 @@ func CreateBulkRunFuncChannelAscCallBack(maxTaskCount, maxFuncCount int, done <-
 	go func(funcs chan func() interface{}, maxTaskCount int) {
 		ch := make(chan chan struct{}, maxTaskCount)
 		once := sync.Once{}
-		defer close(funcs)
+		// defer close(funcs)
 		for {
 			select {
 			case fn, ok := <-funcs:
@@ -166,5 +169,91 @@ func OrChannel() {
 			}
 		}()
 		return orDone
+	}
+}
+
+type GoPoll struct {
+	work    chan func()
+	sem     chan struct{}
+	timeout time.Duration
+}
+
+func NewGoPoll(size int, forExit time.Duration) *GoPoll {
+	return &GoPoll{
+		work:    make(chan func()),
+		sem:     make(chan struct{}, size),
+		timeout: forExit,
+	}
+}
+
+//Grow .
+func (p *GoPoll) Grow(num int) error {
+	newSem := make(chan struct{}, num)
+loop:
+	for {
+		select {
+		case sign := <-p.sem:
+			select {
+			case newSem <- sign:
+			default:
+			}
+		default:
+			break loop
+		}
+	}
+	p.sem = newSem
+	return nil
+}
+
+//Schedule 把方法加入协程池并被执行
+func (p *GoPoll) Schedule(task func()) error {
+	select {
+	case p.work <- task:
+	case p.sem <- struct{}{}:
+		go p.worker(p.timeout, task)
+	}
+	return nil
+}
+
+func (p *GoPoll) worker(delay time.Duration, task func()) {
+	defer func() { <-p.sem }()
+	timer := time.NewTimer(delay)
+	for {
+		task()
+		timer.Reset(delay)
+		select {
+		case task = <-p.work:
+		case <-timer.C:
+			return
+		}
+	}
+}
+
+func Poll(size int, forExit time.Duration) func(func()) error {
+	var (
+		work    chan func()   = make(chan func())
+		sem     chan struct{} = make(chan struct{}, size)
+		timeout time.Duration = forExit
+		worker                = func(delay time.Duration, task func()) {
+			defer func() { <-sem }()
+			timer := time.NewTimer(delay)
+			for {
+				task()
+				timer.Reset(delay)
+				select {
+				case task = <-work:
+				case <-timer.C:
+					return
+				}
+			}
+		}
+	)
+	return func(task func()) error {
+		select {
+		case work <- task:
+		case sem <- struct{}{}:
+			go worker(timeout, task)
+		}
+		return nil
 	}
 }
