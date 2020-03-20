@@ -44,12 +44,12 @@ func (l *loopTask) Start() {
 					front := l.tasks[:i]
 					back := l.tasks[i+1:]
 					l.tasks = append(front, back...)
+					i--
 				}
 				remove = func() {
 					once.Do(func() {
 						isRemove = true
 						pop(i)
-						i--
 					})
 				}
 			)
