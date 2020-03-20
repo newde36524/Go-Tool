@@ -38,7 +38,13 @@ func (g *gPool) SchduleByKey(key interface{}, task func()) bool {
 	case <-g.ctx.Done():
 		return false
 	case g.sign <- struct{}{}:
-		gItem := newgItem(g.ctx, g.taskNum, g.exp, func() { g.m.Delete(key) })
+		gItem := newgItem(g.ctx, g.taskNum, g.exp, func() {
+			g.m.Delete(key)
+			select {
+			case <-g.sign:
+			default:
+			}
+		})
 		g.m.Store(key, gItem)
 		return gItem.DoOrInChan(task)
 	}
