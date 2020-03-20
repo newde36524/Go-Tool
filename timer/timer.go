@@ -37,20 +37,32 @@ func (l *loopTask) Start() {
 	t = time.AfterFunc(l.delay, func() {
 		for i := 0; i < len(l.tasks); i++ {
 			var (
-				once   sync.Once
-				entity = l.tasks[i]
+				once     sync.Once
+				entity   = l.tasks[i]
+				isRemove = false
+				pop      = func(i int) {
+					front := l.tasks[:i]
+					back := l.tasks[i+1:]
+					l.tasks = append(front, back...)
+				}
 				remove = func() {
 					once.Do(func() {
-						front := l.tasks[:i]
-						back := l.tasks[i+1:]
-						l.tasks = append(front, back...)
+						isRemove = true
+						pop(i)
 						i--
 					})
 				}
 			)
-			if time.Now().Sub(entity.start) > entity.delay {
-				entity.start = time.Now()
+			if time.Now().Sub(entity.start) >= entity.delay {
+				entity.start = time.Now().Add(entity.delay)
 				entity.task(remove)
+				if !isRemove {
+					pop(i)
+					l.tasks = append(l.tasks, entity)
+				}
+			} else {
+				t.Reset(time.Now().Sub(entity.start))
+				break
 			}
 		}
 		t.Reset(l.delay)
