@@ -106,7 +106,12 @@ func (g *gItem) worker() {
 		select {
 		case <-g.ctx.Done():
 			return
-		case task, ok := <-g.tasks: //执行任务优先
+		default:
+		}
+		select {
+		case <-g.ctx.Done():
+			return
+		case task, ok := <-g.tasks:
 			if !ok {
 				return
 			}
@@ -120,8 +125,12 @@ func (g *gItem) worker() {
 			if task != nil {
 				task()
 			}
-		case <-timer.C:
-			return
+		default:
+			select {
+			case <-timer.C:
+				return
+			default:
+			}
 		}
 	}
 }
