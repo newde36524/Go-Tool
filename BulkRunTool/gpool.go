@@ -38,7 +38,13 @@ func (g *gPool) SchduleByKey(key interface{}, task func()) bool {
 	case <-g.ctx.Done():
 		return false
 	case g.sign <- struct{}{}:
-		gItem := newgItem(g.ctx, g.taskNum, g.exp, func() { g.m.Delete(key) })
+		gItem := newgItem(g.ctx, g.taskNum, g.exp, func() {
+			g.m.Delete(key)
+			select {
+			case <-g.sign:
+			default:
+			}
+		})
 		g.m.Store(key, gItem)
 		return gItem.DoOrInChan(task)
 	}
@@ -100,7 +106,12 @@ func (g *gItem) worker() {
 		select {
 		case <-g.ctx.Done():
 			return
-		case task, ok := <-g.tasks: //执行任务优先
+		default:
+		}
+		select {
+		case <-g.ctx.Done():
+			return
+		case task, ok := <-g.tasks:
 			if !ok {
 				return
 			}
@@ -114,8 +125,12 @@ func (g *gItem) worker() {
 			if task != nil {
 				task()
 			}
-		case <-timer.C:
-			return
+		default:
+			select {
+			case <-timer.C:
+				return
+			default:
+			}
 		}
 	}
 }
