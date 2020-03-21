@@ -55,7 +55,7 @@ func (l *loopTask) Start() {
 					l.tasks = append(l.tasks, entity)
 				}
 			} else {
-				t.Reset(time.Now().Sub(entity.start))
+				t.Reset(entity.delay - time.Now().Sub(entity.start))
 				return
 			}
 		}
