@@ -77,7 +77,7 @@ func (g *gItem) DoOrInChan(task func()) bool {
 	select {
 	case g.sign <- struct{}{}:
 		go g.worker()
-		runtime.Gosched()
+		// runtime.Gosched()
 		return g.DoOrInChan(task)
 	default:
 	}
