@@ -39,7 +39,7 @@ func (l *loopTask) Start() {
 			var (
 				entity   = l.tasks[i]
 				isRemove = false
-				pop      = func(i int) {
+				swap     = func() {
 					front := l.tasks[:i]
 					back := l.tasks[i+1:]
 					l.tasks = append(front, back...)
@@ -49,7 +49,7 @@ func (l *loopTask) Start() {
 			)
 			if time.Now().Sub(entity.start) >= entity.delay {
 				entity.task(remove)
-				pop(i)
+				swap()
 				if !isRemove {
 					entity.start = time.Now().Add(entity.delay)
 					l.tasks = append(l.tasks, entity)
