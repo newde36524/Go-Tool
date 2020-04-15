@@ -19,6 +19,7 @@ import (
 	"github.com/newde36524/Go-Tool/bulkruntool"
 	"github.com/newde36524/Go-Tool/cryptotool"
 	"github.com/newde36524/Go-Tool/filetool"
+	"github.com/newde36524/Go-Tool/geohash"
 	"github.com/newde36524/Go-Tool/redistool"
 	"github.com/newde36524/Go-Tool/reference"
 	"github.com/newde36524/Go-Tool/task"
@@ -59,7 +60,7 @@ func main() {
 	// TestCreateBulkRunFuncChannelAscCallBack()
 	// TestReadPagingBuffer()
 	// TestGoPoll()
-	TestPoll()
+	// TestPoll()
 
 	// ch := time.After(time.Second)
 	// time.Sleep(time.Second)
@@ -105,7 +106,7 @@ func main() {
 		// TestThrottle()
 		// TestDebounce()
 	}
-
+	TestGeoHash()
 	<-time.After(time.Hour)
 }
 
@@ -440,4 +441,8 @@ func TestPoll() {
 			time.Sleep(time.Second)
 		})
 	}
+}
+
+func TestGeoHash() {
+	fmt.Println(geohash.Around(116.3967, 44.9999))
 }
