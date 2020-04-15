@@ -51,7 +51,7 @@ func (l *loopTask) Start() {
 				entity.task(remove)
 				swap()
 				if !isRemove {
-					entity.start = time.Now().Add(entity.delay)
+					entity.start = time.Now()
 					l.tasks = append(l.tasks, entity)
 				}
 			} else {
