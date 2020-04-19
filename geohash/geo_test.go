@@ -6,7 +6,7 @@ import (
 )
 
 func TestArround(t *testing.T) {
-	result := Around(116.3967, 44.9999)
-	t.Log(result)
+	result := Around2(116.3967, 44.9999, 8)
+	t.Error(result)
 	fmt.Println(result)
 }

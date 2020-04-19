@@ -1,7 +1,6 @@
 package geohash
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -13,9 +12,7 @@ var (
 	length               = 20
 	latUnit              = (max_Lat - min_Lat) / (1 << 20)
 	lngUnit              = (max_Lng - min_Lng) / (1 << 20)
-	base32Lookup         = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "b",
-		"c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p",
-		"q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}
+	base32Lookup         = "0123456789bcdefghjkmnpqrstuvwxyz"
 )
 
 //convert .
@@ -35,7 +32,6 @@ func convert(min, max, value float64) (list []string) {
 		}
 	}
 	cvt(min, max, value)
-	fmt.Println(list)
 	return
 }
 
@@ -43,7 +39,7 @@ func convert(min, max, value float64) (list []string) {
 func base32Encode(str string) string {
 	result := make([]string, 0, length)
 	for i := 0; i < len(str) && len(str) >= i+5; i += 5 {
-		result = append(result, base32Lookup[convertToIndex(str[i:i+5])])
+		result = append(result, string(base32Lookup[convertToIndex(str[i:i+5])]))
 	}
 	return strings.Join(result, "")
 }
@@ -62,7 +58,7 @@ func convertToIndex(str string) int {
 }
 
 //encode .
-func encode(lng, lat float64) string {
+func encode(lat, lng float64) string {
 	latList := convert(min_Lat, max_Lat, lat)
 	lngList := convert(min_Lng, max_Lng, lng)
 	sb := make([]string, 0, length)
