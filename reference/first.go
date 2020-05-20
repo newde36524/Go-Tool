@@ -34,6 +34,7 @@ func Throttle(fn func(), delay time.Duration) func() {
 	}
 }
 
+//Throttle2 方法节流2
 func Throttle2(fn func(), delay time.Duration) func() {
 	tricker := time.NewTicker(delay)
 	once := sync.Once{}
@@ -43,6 +44,22 @@ func Throttle2(fn func(), delay time.Duration) func() {
 			fn()
 		default:
 			once.Do(fn)
+		}
+	}
+}
+
+//Throttle3 方法节流3
+func Throttle3(fn func(), delay time.Duration) func() {
+	now := time.Now()
+	var mu sync.Mutex
+	return func() {
+		if time.Now().Sub(now) >= delay {
+			mu.Lock()
+			if time.Now().Sub(now) >= delay {
+				now = time.Now()
+				mu.Unlock()
+				fn()
+			}
 		}
 	}
 }
