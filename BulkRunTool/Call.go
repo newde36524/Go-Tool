@@ -65,8 +65,10 @@ func RunTask(maxTaskCount int, funcs []func()) {
 	for _, fn := range funcs {
 		ch <- struct{}{}
 		go func(f func()) {
+			defer func() {
+				<-ch
+			}()
 			f()
-			<-ch
 		}(fn)
 	}
 }
@@ -79,8 +81,10 @@ func RunTask2(maxTaskCount int, funcs <-chan func()) {
 		fn := <-funcs
 		ch <- struct{}{}
 		go func(f func()) {
+			defer func() {
+				<-ch
+			}()
 			f()
-			<-ch
 		}(fn)
 	}
 }
@@ -100,8 +104,10 @@ func CreateBulkRunFuncChannel(maxTaskCount, maxFuncCount int, done <-chan struct
 				}
 				ch <- struct{}{}
 				go func(f func()) {
+					defer func() {
+						<-ch
+					}()
 					f()
-					<-ch
 				}(fn)
 			case <-done:
 				return
