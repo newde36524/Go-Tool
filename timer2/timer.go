@@ -8,10 +8,12 @@ import (
 
 //Entity .
 type Entity struct {
-	key   string
-	start time.Time
-	delay time.Duration //超过时间就执行命令
-	task  func(remove func())
+	key             string
+	getStartRunTime func(interface{}) time.Time
+	start           time.Time
+	delay           time.Duration //超过时间就执行命令
+	task            func(remove func())
+	value           interface{}
 }
 
 //TimerTask .
@@ -37,15 +39,16 @@ func NewTimerTask() *TimerTask {
 }
 
 //Add .
-func (l *TimerTask) Add(key string, delay time.Duration, task func(remove func())) {
+func (l *TimerTask) Add(key string, getStartRunTime func(interface{}) time.Time, value interface{}, delay time.Duration, task func(remove func())) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	e := &Entity{
-		key:   key,
-		start: time.Now(),
-		delay: delay,
-		task:  task,
+		key:             key,
+		getStartRunTime: getStartRunTime,
+		delay:           delay,
+		task:            task,
 	}
+	e.start = getStartRunTime(value)
 	point := l.tasks.Front()
 	for {
 		if point == nil {
@@ -97,7 +100,7 @@ func (l *TimerTask) start() {
 				entity.task(remove)
 				l.Delete(entity.key)
 				if !isRemove {
-					l.Add(entity.key, entity.delay, entity.task)
+					l.Add(entity.key, entity.getStartRunTime, entity.value, entity.delay, entity.task)
 				}
 			} else {
 				l.t.Reset(entity.delay - time.Now().Sub(entity.start))
