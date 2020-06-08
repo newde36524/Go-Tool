@@ -2,6 +2,7 @@ package timer2
 
 import (
 	"container/list"
+	"errors"
 	"sync"
 	"time"
 )
@@ -39,7 +40,7 @@ func NewTimerTask() *TimerTask {
 }
 
 //Add .
-func (l *TimerTask) Add(key string, getStartRunTime func(interface{}) time.Time, value interface{}, delay time.Duration, task func(remove func())) {
+func (l *TimerTask) Add(key string, getStartRunTime func(interface{}) time.Time, value interface{}, delay time.Duration, task func(remove func())) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	e := &Entity{
@@ -62,8 +63,12 @@ func (l *TimerTask) Add(key string, getStartRunTime func(interface{}) time.Time,
 		}
 		point = point.Next()
 	}
+	if _, ok := l.mp[key]; ok {
+		return errors.New("key 已存在")
+	}
 	l.mp[key] = point
 	l.cond.Signal()
+	return nil
 }
 
 //Delete .
