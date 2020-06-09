@@ -10,11 +10,11 @@ import (
 //Entity .
 type Entity struct {
 	key             string
-	getStartRunTime func(interface{}) time.Time
+	GetStartRunTime func(key string, v interface{}) (time.Time, error)
 	start           time.Time
-	delay           time.Duration //超过时间就执行命令
-	task            func(remove func())
-	value           interface{}
+	Delay           time.Duration
+	Task            func(key string, remove func())
+	Value           interface{}
 }
 
 //TimerTask .
@@ -26,8 +26,8 @@ type TimerTask struct {
 	cond  *sync.Cond
 }
 
-//NewTimerTask .
-func NewTimerTask() *TimerTask {
+//New .
+func New() *TimerTask {
 	mu := &sync.Mutex{}
 	mu.Lock()
 	result := &TimerTask{
@@ -39,17 +39,60 @@ func NewTimerTask() *TimerTask {
 	return result
 }
 
-//Add .
-func (l *TimerTask) Add(key string, getStartRunTime func(interface{}) time.Time, value interface{}, delay time.Duration, task func(remove func())) error {
+func (l *TimerTask) Modify(key string, mod func(*Entity) error) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if v, ok := l.mp[key]; ok {
+		entity := v.Value.(*Entity)
+		err := mod(entity)
+		if err != nil {
+			return err
+		}
+		l.Delete(key)
+		l.add(entity)
+		return nil
+	} else {
+		return fmt.Errorf("key is not exist")
+	}
+}
+
+//Add .
+func (l *TimerTask) Add(delay time.Duration, getStartRunTime func(key string, v interface{}) (time.Time, error), v interface{}, task func(key string, remove func())) (string, error) {
+	key := uuid.New().String()
 	e := &Entity{
 		key:             key,
-		getStartRunTime: getStartRunTime,
-		delay:           delay,
-		task:            task,
+		GetStartRunTime: getStartRunTime,
+		Delay:           delay,
+		Value:           v,
+		Task:            task,
 	}
-	e.start = getStartRunTime(value)
+	err := l.add(e)
+	if err != nil {
+		return "", err
+	}
+	return key, nil
+}
+
+//Sync .
+func (l *TimerTask) Sync(key string, delay time.Duration, getStartRunTime func(key string, v interface{}) (time.Time, error), v interface{}, task func(key string, remove func())) error {
+	e := &Entity{
+		key:             key,
+		GetStartRunTime: getStartRunTime,
+		Delay:           delay,
+		Value:           v,
+		Task:            task,
+	}
+	return l.add(e)
+}
+
+func (l *TimerTask) add(e *Entity) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	t, err := e.GetStartRunTime(e.key, e.Value)
+	if err != nil {
+		return err
+	}
+	e.start = t
 	point := l.tasks.Front()
 	for {
 		if point == nil {
@@ -57,16 +100,13 @@ func (l *TimerTask) Add(key string, getStartRunTime func(interface{}) time.Time,
 			break
 		}
 		entity := point.Value.(*Entity)
-		if entity.start.Add(entity.delay).Sub(time.Now().Add(delay)) >= 0 {
+		if entity.start.Add(entity.Delay).Sub(time.Now().Add(e.Delay)) >= 0 {
 			point = l.tasks.InsertBefore(e, point)
 			break
 		}
 		point = point.Next()
 	}
-	if _, ok := l.mp[key]; ok {
-		return errors.New("key 已存在")
-	}
-	l.mp[key] = point
+	l.mp[e.key] = point
 	l.cond.Signal()
 	return nil
 }
@@ -76,8 +116,8 @@ func (l *TimerTask) Delete(key string) {
 	l.mu.Lock()
 	element, ok := l.mp[key]
 	if ok {
-		l.tasks.Remove(element)
 		delete(l.mp, key)
+		l.tasks.Remove(element)
 	}
 	l.mu.Unlock()
 }
@@ -101,14 +141,14 @@ func (l *TimerTask) start() {
 				isRemove = false
 				remove   = func() { isRemove = true }
 			)
-			if time.Now().Sub(entity.start) >= entity.delay {
-				entity.task(remove)
+			if time.Now().Sub(entity.start) >= entity.Delay {
+				entity.Task(entity.key, remove)
 				l.Delete(entity.key)
 				if !isRemove {
-					l.Add(entity.key, entity.getStartRunTime, entity.value, entity.delay, entity.task)
+					l.add(entity)
 				}
 			} else {
-				l.t.Reset(entity.delay - time.Now().Sub(entity.start))
+				l.t.Reset(entity.Delay - time.Now().Sub(entity.start))
 				return
 			}
 		}
