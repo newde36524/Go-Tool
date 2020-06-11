@@ -111,6 +111,10 @@ func (l *TimerTask) add(e *Entity) error {
 	}
 	l.mp[e.key] = point
 	l.cond.Signal()
+	if point == l.tasks.Front() {
+		e := point.Value.(*Entity)
+		l.t.Reset(time.Until(e.start.Add(e.Delay)))
+	}
 	return nil
 }
 

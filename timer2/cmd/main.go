@@ -22,9 +22,20 @@ func main() {
 	// 	})
 	// }
 	rd := bufio.NewReader(os.Stdin)
+
+	for i := 0; i < 10000; i++ {
+		_, _ = task.Add(20*time.Second, func(key string, v interface{}) (time.Time, error) {
+			return time.Now(), nil
+		}, nil, func(key string, remove func()) {
+			fmt.Println(key, time.Now())
+			remove()
+		})
+	}
+	fmt.Println("end")
+
 	for {
 		rd.ReadLine()
-		task.Add(2*time.Second, func(key string, v interface{}) (time.Time, error) {
+		_, _ = task.Add(2*time.Second, func(key string, v interface{}) (time.Time, error) {
 			return time.Now(), nil
 		}, nil, func(key string, remove func()) {
 			fmt.Println(key, time.Now())
