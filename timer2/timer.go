@@ -53,7 +53,7 @@ func (l *TimerTask) Modify(key string, mod func(*Entity) error) error {
 		if err != nil {
 			return err
 		}
-		l.Delete(key)
+		l.delete(key)
 		return l.add(entity)
 	}
 	return fmt.Errorf("key is not exist")
@@ -61,6 +61,8 @@ func (l *TimerTask) Modify(key string, mod func(*Entity) error) error {
 
 //Add .
 func (l *TimerTask) Add(delay time.Duration, getStartRunTime func(key string, v interface{}) (time.Time, error), v interface{}, task func(key string, remove func())) (string, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	key := uuid.New().String()
 	e := &Entity{
 		key:             key,
@@ -78,6 +80,8 @@ func (l *TimerTask) Add(delay time.Duration, getStartRunTime func(key string, v 
 
 //Sync .
 func (l *TimerTask) Sync(key string, delay time.Duration, getStartRunTime func(key string, v interface{}) (time.Time, error), v interface{}, task func(key string, remove func())) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	e := &Entity{
 		key:             key,
 		GetStartRunTime: getStartRunTime,
@@ -89,8 +93,6 @@ func (l *TimerTask) Sync(key string, delay time.Duration, getStartRunTime func(k
 }
 
 func (l *TimerTask) add(e *Entity) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
 	t, err := e.GetStartRunTime(e.key, e.Value)
 	if err != nil {
 		return err
@@ -120,8 +122,11 @@ func (l *TimerTask) add(e *Entity) error {
 
 //Delete .
 func (l *TimerTask) Delete(key string) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+	l.atomicInvoce(func() { l.delete(key) })
+}
+
+//delete .
+func (l *TimerTask) delete(key string) {
 	element, ok := l.mp[key]
 	if ok {
 		delete(l.mp, key)
@@ -132,6 +137,13 @@ func (l *TimerTask) Delete(key string) {
 //Len .
 func (l *TimerTask) Len() int {
 	return l.tasks.Len()
+}
+
+//atomicInvoce .
+func (l *TimerTask) atomicInvoce(fn func()) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	fn()
 }
 
 //start .
@@ -149,11 +161,13 @@ func (l *TimerTask) start() {
 				remove   = func() { isRemove = true }
 			)
 			if time.Since(entity.start) >= entity.Delay {
-				entity.Task(entity.key, remove)
-				l.Delete(entity.key)
-				if !isRemove {
-					_ = l.add(entity)
-				}
+				l.atomicInvoce(func() {
+					entity.Task(entity.key, remove)
+					l.delete(entity.key)
+					if !isRemove {
+						_ = l.add(entity)
+					}
+				})
 			} else {
 				l.t.Reset(entity.Delay - time.Since(entity.start))
 				return
