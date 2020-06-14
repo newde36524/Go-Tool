@@ -41,7 +41,7 @@ func (s *SyncOp) Back(key string, fn func() (interface{}, error)) (bool, error) 
 	}
 	value, err := fn()
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	select {
 	case v <- value:
