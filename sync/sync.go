@@ -31,14 +31,18 @@ func (s *SyncOp) Do(ctx context.Context, key string, fn func()) (interface{}, er
 	}
 }
 
-func (s *SyncOp) Back(key string, fn func() interface{}) (bool, error) {
+func (s *SyncOp) Back(key string, fn func() (interface{}, error)) (bool, error) {
 	s.mu.Lock()
 	v, ok := s.m[key]
+	delete(s.m, key)
 	s.mu.Unlock()
 	if !ok {
 		return false, nil
 	}
-	value := fn()
+	value, err := fn()
+	if err != nil {
+		return false, err
+	}
 	select {
 	case v <- value:
 		return true, nil
