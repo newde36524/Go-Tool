@@ -7,3 +7,9 @@ func RevertArray(arr []interface{}) []interface{} {
 	}
 	return arr
 }
+
+//CopySlice 数组拷贝
+func CopySlice(bs []interface{}) []interface{} {
+	result := append(bs, struct{}{})
+	return result[:len(result)-1]
+}
