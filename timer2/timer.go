@@ -97,6 +97,7 @@ func (l *TimerTask) add(e *Entity) error {
 	if err != nil {
 		return err
 	}
+	//todo 需要用跳表替换遍历，一定量级以下使用遍历，以上使用跳表
 	e.start = t
 	point := l.tasks.Front()
 	for {
