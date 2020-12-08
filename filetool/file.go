@@ -134,3 +134,35 @@ func GetDirFullPath() (string, error) {
 func GetDirFullPath2() (string, error) {
 	return filepath.Abs("./")
 }
+
+//Find 深度遍历文件
+func Find(fileInfo os.FileInfo, callback func(baseDir string, file *os.File)) {
+	var find func(baseDir string, fileInfo os.FileInfo)
+	find = func(baseDir string, fileInfo os.FileInfo) {
+		fullName := filepath.Join(baseDir, fileInfo.Name())
+		file, err := os.Open(fullName)
+		if err != nil {
+			panic(err)
+		}
+		if fileInfo.IsDir() {
+			dirItems, err := file.Readdir(-1)
+			if err != nil {
+				panic(err)
+			}
+			for _, dirItem := range dirItems {
+				if dirItem.IsDir() {
+					find(fullName, dirItem)
+				} else {
+					file, err := os.Open(filepath.Join(fullName, dirItem.Name()))
+					if err != nil {
+						panic(err)
+					}
+					callback(fullName, file)
+				}
+			}
+		} else {
+			callback("", file)
+		}
+	}
+	find("", fileInfo)
+}
