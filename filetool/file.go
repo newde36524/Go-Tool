@@ -1,6 +1,7 @@
 package filetool
 
 import (
+	"archive/tar"
 	"bufio"
 	"context"
 	"io"
@@ -9,6 +10,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
+
+	"github.com/issue9/logs"
 )
 
 // ReadPagingFile 分段获取指定文件的数据包
@@ -136,7 +140,10 @@ func GetDirFullPath2() (string, error) {
 }
 
 //Find 深度遍历文件
-func Find(fileInfo os.FileInfo, callback func(baseDir string, file *os.File)) {
+//@baseDir 目标文件或文件夹所在目录
+//@fileInfo 目标文件或文件夹
+//@callback 遍历时处理 @param1 文件所在绝对路径 @param2 文件
+func Find(baseDir string, fileInfo os.FileInfo, callback func(baseDir string, file *os.File)) {
 	var find func(baseDir string, fileInfo os.FileInfo)
 	find = func(baseDir string, fileInfo os.FileInfo) {
 		fullName := filepath.Join(baseDir, fileInfo.Name())
@@ -164,5 +171,129 @@ func Find(fileInfo os.FileInfo, callback func(baseDir string, file *os.File)) {
 			callback("", file)
 		}
 	}
-	find("", fileInfo)
+	find(baseDir, fileInfo)
+}
+
+//Compress 打包文件到目标目录
+//@baseDir 目标文件所在目录
+//@fileInfo 目标文件
+//@destDir 压缩到文件夹
+//@destFileName 压缩文件名
+func Compress(baseDir string, fileInfo os.FileInfo, destDir, destFileName string) (err error) {
+	if destDir == "" {
+		panic("目标目录不允许为空")
+	}
+	if destFileName == "" {
+		panic("目标文件名不允许为空")
+	}
+	if _, err := os.Stat(baseDir); err != nil { //创建目标目录,err 不为nil时表示文件不存在
+		logs.Infof("创建文件夹:%s", baseDir)
+		if err := os.MkdirAll(baseDir, os.ModeDir); err != nil {
+			return err
+		}
+	}
+	if _, err := os.Stat(destDir); err != nil { //创建目标目录,err 不为nil时表示文件不存在
+		logs.Infof("创建文件夹:%s", destDir)
+		if err := os.MkdirAll(destDir, os.ModeDir); err != nil {
+			return err
+		}
+	}
+	var writer *tar.Writer
+	var targetFile *os.File
+	defer func() {
+		if writer != nil {
+			writer.Close()
+		}
+		if targetFile != nil {
+			targetFile.Close()
+		}
+	}()
+	once := sync.Once{}
+	Find(baseDir, fileInfo, func(baseDir string, file *os.File) {
+		once.Do(func() {
+			targetFile, err = os.Create(filepath.Join(destDir, destFileName))
+			if err != nil {
+				panic("压缩文件创建失败")
+			}
+			writer = tar.NewWriter(targetFile)
+		})
+
+		fInfo, err := file.Stat()
+		if err != nil {
+			logs.Error(err)
+			return
+		}
+		header, err := tar.FileInfoHeader(fInfo, "")
+		if err != nil {
+			logs.Error(err)
+			return
+		}
+		header.Name = strings.TrimPrefix(file.Name(), baseDir)
+		if err := writer.WriteHeader(header); err != nil {
+			logs.Error(err)
+			return
+		}
+		_, err = io.Copy(writer, file)
+		if err != nil {
+			logs.Error(err)
+			return
+		}
+		file.Close()
+		if err := os.Remove(file.Name()); err != nil {
+			logs.Error(err)
+		}
+	})
+	return nil
+}
+
+//DeCompress 解压文件到目标目录
+//@baseDir 压缩文件所在目录
+//@src 压缩文件
+//@dest 目标目录
+func DeCompress(baseDir string, src os.FileInfo, dest string) error {
+	if baseDir == "" {
+		panic("读取目录不允许为空")
+	}
+	if dest == "" {
+		panic("目标目录不允许为空")
+	}
+	if _, err := os.Stat(baseDir); err != nil {
+		if err := os.MkdirAll(baseDir, os.ModeDir); err != nil {
+			return err
+		}
+	}
+	if _, err := os.Stat(dest); err != nil {
+		if err := os.MkdirAll(dest, os.ModeDir); err != nil {
+			return err
+		}
+	}
+	Find(baseDir, src, func(baseDir string, file *os.File) {
+		reader := tar.NewReader(file)
+		for {
+			header, err := reader.Next()
+			if err != nil {
+				break
+			}
+			fullName := filepath.Join(dest, header.Name)
+			if _, err := os.Stat(filepath.Dir(fullName)); err != nil {
+				if err := os.MkdirAll(filepath.Dir(fullName), os.ModeDir); err != nil {
+					panic(err)
+				}
+			}
+			targetFile, err := os.Create(fullName)
+			if err != nil {
+				panic(err)
+			}
+			if _, err := io.Copy(targetFile, reader); err != nil {
+				targetFile.Close()
+				panic(err)
+			}
+			targetFile.Close()
+		}
+		file.Close()
+		if err := os.Remove(file.Name()); err != nil {
+			panic(err)
+		}
+	})
+	return nil
 }
