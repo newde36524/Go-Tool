@@ -1,6 +1,7 @@
 package bulkruntool
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -230,4 +231,27 @@ func Poll(size int, forExit time.Duration) func(func()) error {
 		}
 		return nil
 	}
+}
+
+//BuilkRun .
+func BuilkRun(goCount int, idCards []string, fn func(idCard string)) {
+	chs := make(chan struct{}, goCount)
+	defer close(chs)
+	var wg sync.WaitGroup
+	for i := 0; i < len(idCards); i++ {
+		chs <- struct{}{}
+		wg.Add(1)
+		idCard := idCards[i]
+		go func(idCard string) {
+			defer func() {
+				<-chs
+				wg.Done()
+				if err := recover(); err != nil {
+					fmt.Println(err)
+				}
+			}()
+			fn(idCard)
+		}(idCard)
+	}
+	wg.Wait()
 }
