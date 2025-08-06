@@ -1,18 +1,19 @@
 package customer
 
 import (
-	tcp "Go-Tool/tcpserver"
 	"context"
+
+	tcp "github.com/newde36524/Go-Tool/tcpserver"
 
 	"github.com/issue9/logs"
 )
 
-//TCPHandle tcpserver使用示例，回复相同的内容
+// TCPHandle tcpserver使用示例，回复相同的内容
 type TCPHandle struct {
 	tcp.TCPHandle
 }
 
-//ReadPacket .
+// ReadPacket .
 func (TCPHandle) ReadPacket(context context.Context, conn *tcp.Conn) (tcp.Packet, error) {
 	//todo 定义读取数据帧的规则
 	b := make([]byte, 1024)
@@ -27,13 +28,13 @@ func (TCPHandle) ReadPacket(context context.Context, conn *tcp.Conn) (tcp.Packet
 	return p, err
 }
 
-//OnConnection .
+// OnConnection .
 func (TCPHandle) OnConnection(conn *tcp.Conn) {
 	//todo 连接建立时处理，用于一些建立连接时，需要主动下发数据包的场景
 	logs.Infof("客户端:%s 连接上来了呦~~~", conn.RemoteAddr())
 }
 
-//OnMessage .
+// OnMessage .
 func (TCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet) error {
 	//todo 处理接收的包
 	sendP := Packet{}
@@ -43,17 +44,17 @@ func (TCPHandle) OnMessage(conn *tcp.Conn, p tcp.Packet) error {
 	return nil
 }
 
-//OnClose .
+// OnClose .
 func (TCPHandle) OnClose(state tcp.ConnState) {
 	logs.Infof("客户端退出，当前连接状态:%s", state.String())
 }
 
-//OnTimeOut .
+// OnTimeOut .
 func (TCPHandle) OnTimeOut(conn *tcp.Conn, code tcp.TimeOutState) {
 	logs.Infof("%s: 触发超時，超时类型:%d", conn.RemoteAddr(), code)
 }
 
-//OnPanic .
+// OnPanic .
 func (TCPHandle) OnPanic(conn *tcp.Conn, err error) {
 	logs.Error(err)
 	conn.Close()

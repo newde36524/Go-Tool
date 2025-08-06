@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/issue9/logs"
 	"github.com/pborman/uuid"
 )
 
@@ -219,7 +220,7 @@ func (smsClient *ALiYunSmsClient) Execute(accessKeyId, accessKeySecret, mobile, 
 	var result map[string]interface{}
 	err = json.Unmarshal(body, &result)
 	for key, value := range result {
-		l4g.Debug("key:", key, " value:", value)
+		logs.Debug("key:", key, " value:", value)
 	}
 
 	return

@@ -1,9 +1,10 @@
 package main
 
 import (
-	"Go-Tool/commontool"
 	"fmt"
 	"time"
+
+	"github.com/newde36524/Go-Tool/commontool"
 )
 
 func main() {

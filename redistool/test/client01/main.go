@@ -1,18 +1,18 @@
 package main
 
 import (
-	"Go-Tool/redistool"
 	"fmt"
 	"time"
 
 	"github.com/issue9/logs"
+	"github.com/newde36524/Go-Tool/redistool"
 )
 
 func main() {
-	client := redistool.NewRedisClient(&redistool.RedisClientOption{
+	client := redistool.NewRedisClient("127.0.0.1:6379", &redistool.RedisClientOption{
 		// Password: "123456",
 	})
-	err := client.Connect("127.0.0.1:6379")
+	err := client.Connect()
 	if err != nil {
 		logs.Error(err)
 	}

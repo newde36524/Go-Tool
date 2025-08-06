@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//Conn 连接代理对象
+// Conn 连接代理对象
 type Conn struct {
 	rwc      net.Conn        //tcp原始连接对象
 	option   ConnOption      //连接配置项
@@ -21,7 +21,7 @@ type Conn struct {
 	isDebug  bool            //是否打印框架内部debug信息
 }
 
-//NewConn returns a wrapper of raw conn
+// NewConn returns a wrapper of raw conn
 func NewConn(rwc net.Conn, option ConnOption) (result *Conn) {
 	result = &Conn{
 		rwc:    rwc,
@@ -37,7 +37,7 @@ func NewConn(rwc net.Conn, option ConnOption) (result *Conn) {
 	return
 }
 
-//fnProxy 代理执行方法,用于检测执行超时
+// fnProxy 代理执行方法,用于检测执行超时
 func (c *Conn) fnProxy(fn func()) <-chan struct{} {
 	result := make(chan struct{}, 1)
 	go func() {
@@ -55,7 +55,7 @@ func (c *Conn) fnProxy(fn func()) <-chan struct{} {
 	return result
 }
 
-//safeFn 代理方法，用于安全调用方法，恢复panic
+// safeFn 代理方法，用于安全调用方法，恢复panic
 func (c *Conn) safeFn(fn func()) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -67,12 +67,12 @@ func (c *Conn) safeFn(fn func()) {
 	fn()
 }
 
-//UseDebug 打开框架内部Debug信息
+// UseDebug 打开框架内部Debug信息
 func (c *Conn) UseDebug() {
 	c.isDebug = true
 }
 
-//Read 从tcp连接中读取数据帧
+// Read 从tcp连接中读取数据帧
 func (c *Conn) Read(b []byte) (n int, err error) {
 	c.rwc.SetReadDeadline(time.Now().Add(c.option.ReadDataTimeOut))
 	n, err = c.rwc.Read(b)
@@ -82,22 +82,22 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 	return
 }
 
-//RemoteAddr 客户端IP地址
+// RemoteAddr 客户端IP地址
 func (c *Conn) RemoteAddr() string {
 	return c.rwc.RemoteAddr().String()
 }
 
-//LocalAddr 服务器IP地址
+// LocalAddr 服务器IP地址
 func (c *Conn) LocalAddr() string {
 	return c.rwc.LocalAddr().String()
 }
 
-//Raw 获取原始连接
+// Raw 获取原始连接
 func (c *Conn) Raw() net.Conn {
 	return c.rwc
 }
 
-//run 固定处理流程
+// run 固定处理流程
 func (c *Conn) run() {
 	c.recvChan = c.recv(c.option.MaxRecvChanCount)(c.heartBeat(c.option.RecvTimeOut, func() { c.handle.OnTimeOut(c, RecvTimeOutCode) }))
 	c.sendChan = c.send(c.option.MaxSendChanCount)(c.heartBeat(c.option.SendTimeOut, func() { c.handle.OnTimeOut(c, SendTimeOutCode) }))
@@ -137,7 +137,7 @@ func (c *Conn) run() {
 	})
 }
 
-//Write 发送消息到客户端
+// Write 发送消息到客户端
 func (c *Conn) Write(packet Packet) {
 	if packet == nil {
 		c.option.Logger.Errorf("%s: Conn.Write: packet is nil,do nothing", c.RemoteAddr())
@@ -150,7 +150,7 @@ func (c *Conn) Write(packet Packet) {
 	}
 }
 
-//Close 关闭服务器和客户端的连接
+// Close 关闭服务器和客户端的连接
 func (c *Conn) Close() {
 	defer c.rwc.Close()
 	c.rwc.SetReadDeadline(time.Time{})  //set read timeout
@@ -163,7 +163,7 @@ func (c *Conn) Close() {
 	// debug.FreeOSMemory() //强制释放内存 待定可能有问题
 }
 
-//readPacket 读取一个包
+// readPacket 读取一个包
 func (c *Conn) readPacket() <-chan Packet {
 	result := make(chan Packet)
 	go c.safeFn(func() {
@@ -181,7 +181,7 @@ func (c *Conn) readPacket() <-chan Packet {
 	return result
 }
 
-//recv 创建一个可接收 packet channel
+// recv 创建一个可接收 packet channel
 func (c *Conn) recv(maxRecvChanCount int) func(<-chan struct{}) <-chan Packet {
 	return func(heartBeat <-chan struct{}) <-chan Packet {
 		result := make(chan Packet, maxRecvChanCount)
@@ -214,7 +214,7 @@ func (c *Conn) recv(maxRecvChanCount int) func(<-chan struct{}) <-chan Packet {
 	}
 }
 
-//send 创建一个可发送 packet channel
+// send 创建一个可发送 packet channel
 func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 	return func(heartBeat <-chan struct{}) chan<- Packet {
 		result := make(chan Packet, maxSendChanCount)
@@ -240,7 +240,7 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 						c.option.Logger.Errorf("%s: Conn.send: the send packet is nil", c.RemoteAddr())
 						break
 					}
-					sendData, err := packet.Serialize(nil)
+					sendData, err := packet.Serialize(context.TODO())
 					if err != nil {
 						c.option.Logger.Error(err)
 					}
@@ -264,7 +264,7 @@ func (c *Conn) send(maxSendChanCount int) func(<-chan struct{}) chan<- Packet {
 	}
 }
 
-//message 创建一个可发送 hand packet channel
+// message 创建一个可发送 hand packet channel
 func (c *Conn) message(maxHandNum int) func(<-chan struct{}) chan<- Packet {
 	return func(heartBeat <-chan struct{}) chan<- Packet {
 		result := make(chan Packet, maxHandNum)
@@ -298,7 +298,7 @@ func (c *Conn) message(maxHandNum int) func(<-chan struct{}) chan<- Packet {
 	}
 }
 
-//heartBeat 协程心跳检测
+// heartBeat 协程心跳检测
 func (c *Conn) heartBeat(timeOut time.Duration, callback func()) <-chan struct{} {
 	result := make(chan struct{})
 	go func() {

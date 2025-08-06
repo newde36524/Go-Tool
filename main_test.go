@@ -5,7 +5,7 @@ import (
 	"log"
 	"testing"
 
-	"./httptool"
+	"github.com/newde36524/Go-Tool/httptool"
 )
 
 func TestGet(t *testing.T) {

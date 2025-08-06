@@ -1,13 +1,13 @@
 package main
 
 import (
-	tcp "Go-Tool/tcpserver"
-	customer "Go-Tool/tcpserver/cmd/customer"
 	"context"
 	"fmt"
 	"time"
 
 	"github.com/issue9/logs"
+	tcp "github.com/newde36524/Go-Tool/tcpserver"
+	customer "github.com/newde36524/Go-Tool/tcpserver/cmd/customer"
 )
 
 func init() {

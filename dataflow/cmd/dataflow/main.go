@@ -1,9 +1,10 @@
 package main
 
 import (
-	"Go-Tool/dataflow"
 	"fmt"
 	"time"
+
+	"github.com/newde36524/Go-Tool/dataflow"
 )
 
 func main() {
