@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-//RunTaskAndAscCallBack 启动指定数量的协程执行多个方法,并按顺序回调
+// RunTaskAndAscCallBack 启动指定数量的协程执行多个方法,并按顺序回调
 func RunTaskAndAscCallBack(maxTaskCount int, funcs []func() interface{}, callback func(interface{})) {
 	ch := make(chan struct{}, maxTaskCount)
 	defer close(ch)
@@ -32,7 +32,7 @@ func RunTaskAndAscCallBack(maxTaskCount int, funcs []func() interface{}, callbac
 	}
 }
 
-//RunTaskAndAscCallBack2 启动指定数量的协程执行多个方法,并按顺序回调
+// RunTaskAndAscCallBack2 启动指定数量的协程执行多个方法,并按顺序回调
 func RunTaskAndAscCallBack2(maxTaskCount int, funcs <-chan func() interface{}, callback func(interface{})) {
 	ch := make(chan struct{}, maxTaskCount)
 	defer close(ch)
@@ -59,7 +59,7 @@ func RunTaskAndAscCallBack2(maxTaskCount int, funcs <-chan func() interface{}, c
 	}
 }
 
-//RunTask 运行指定数量的协程执行多个方法
+// RunTask 运行指定数量的协程执行多个方法
 func RunTask(maxTaskCount int, funcs []func()) {
 	ch := make(chan struct{}, maxTaskCount)
 	defer close(ch)
@@ -74,7 +74,7 @@ func RunTask(maxTaskCount int, funcs []func()) {
 	}
 }
 
-//RunTask2 运行指定数量的协程执行多个方法
+// RunTask2 运行指定数量的协程执行多个方法
 func RunTask2(maxTaskCount int, funcs <-chan func()) {
 	ch := make(chan struct{}, maxTaskCount)
 	defer close(ch)
@@ -90,7 +90,7 @@ func RunTask2(maxTaskCount int, funcs <-chan func()) {
 	}
 }
 
-//CreateBulkRunFuncChannel 创建一个指定并发数量处理,只允许发送的方法通道
+// CreateBulkRunFuncChannel 创建一个指定并发数量处理,只允许发送的方法通道
 func CreateBulkRunFuncChannel(maxTaskCount, maxFuncCount int, done <-chan struct{}) chan<- func() {
 	funcs := make(chan func(), maxFuncCount)
 	go func(funcs chan func(), maxTaskCount int) {
@@ -161,7 +161,7 @@ func NewGoPoll(size int, forExit time.Duration) *GoPoll {
 	}
 }
 
-//Grow .
+// Grow .
 func (p *GoPoll) Grow(num int) error {
 	newSem := make(chan struct{}, num)
 loop:
@@ -180,7 +180,7 @@ loop:
 	return nil
 }
 
-//Schedule 把方法加入协程池并被执行
+// Schedule 把方法加入协程池并被执行
 func (p *GoPoll) Schedule(task func()) error {
 	select {
 	case p.work <- task:
@@ -233,7 +233,7 @@ func Poll(size int, forExit time.Duration) func(func()) error {
 	}
 }
 
-//BuilkRun .
+// BuilkRun .
 func BuilkRun(goCount int, idCards []string, fn func(idCard string)) {
 	chs := make(chan struct{}, goCount)
 	defer close(chs)
