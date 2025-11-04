@@ -17,7 +17,7 @@ import (
 	"github.com/zeromicro/go-zero/core/stringx"
 )
 
-func isNoColumns[T any](b squirrel.SelectBuilder) bool {
+func isNoColumns(b squirrel.SelectBuilder) bool {
 	v, ok := builder.Get(b, "Columns")
 	data, ok2 := v.([]squirrel.Sqlizer)
 	return !ok || ok2 && len(data) == 0
@@ -72,7 +72,7 @@ func Explain(ctx context.Context, session sqlx.Session, b squirrel.SelectBuilder
 // Get 查询并返回一条数据(不支持map类型)
 func Get[T any](ctx context.Context, session sqlx.Session, builder squirrel.SelectBuilder) (*T, error) {
 	var resp T
-	if isNoColumns[T](builder) {
+	if isNoColumns(builder) {
 		feilds := rawFieldNames(resp)
 		builder = builder.Columns(strings.Join(feilds, ","))
 	}
@@ -86,9 +86,8 @@ func Get[T any](ctx context.Context, session sqlx.Session, builder squirrel.Sele
 
 // List 查询并返回所有数据(不支持map类型)
 func List[T any](ctx context.Context, session sqlx.Session, builder squirrel.SelectBuilder) ([]T, error) {
-	if isNoColumns[T](builder) {
-		var in T
-		feilds := rawFieldNames(in)
+	if isNoColumns(builder) {
+		feilds := rawFieldNames(CreateInstance[T]())
 		builder = builder.Columns(strings.Join(feilds, ","))
 	}
 	query, values, err := builder.ToSql()
@@ -102,9 +101,8 @@ func List[T any](ctx context.Context, session sqlx.Session, builder squirrel.Sel
 
 // Page 分页查询并返回分页数据
 func Page[T any](ctx context.Context, session sqlx.Session, builder squirrel.SelectBuilder, pageNum, pageSize int) ([]T, error) {
-	if isNoColumns[T](builder) {
-		var in T
-		feilds := rawFieldNames(in)
+	if isNoColumns(builder) {
+		feilds := rawFieldNames(CreateInstance[T]())
 		builder = builder.Columns(strings.Join(feilds, ","))
 	}
 	offset := (pageNum - 1) * pageSize
@@ -389,7 +387,7 @@ func Delete(ctx context.Context, session sqlx.Session, b squirrel.SelectBuilder)
 }
 
 // toMap 将给定对象的字段名和字段值映射到map中
-func toMap[T any](in T) map[string]interface{} {
+func toMap[T any](in T) map[string]any {
 	getDbTag := func(fi reflect.StructField) string {
 		dbTag := "db"
 		tagv := fi.Tag.Get(dbTag)
@@ -428,7 +426,7 @@ func toMap[T any](in T) map[string]interface{} {
 	switch val.Kind() {
 	case reflect.Struct:
 		// 创建一个map来存储字段名和字段值
-		m := make(map[string]interface{})
+		m := make(map[string]any)
 		// 遍历结构体的所有字段
 		for i := 0; i < val.NumField(); i++ {
 			field := typ.Field(i)
@@ -440,7 +438,7 @@ func toMap[T any](in T) map[string]interface{} {
 		return m
 	case reflect.Map:
 		// 如果是map类型，则创建一个新的map，key为"key"，value为原map的值
-		newMap := make(map[string]interface{})
+		newMap := make(map[string]any)
 		for _, k := range val.MapKeys() {
 			str := fmt.Sprintf("%v", k.Interface())
 			str = strings.Trim(str, "`")
@@ -501,4 +499,24 @@ func rawFieldNames[T any](in T) []string {
 		bs, _ := json.Marshal(in)
 		panic(fmt.Sprintf("rawFieldNames expects a struct or map, err kind:%s, value:%s", typ.Kind().String(), string(bs)))
 	}
+}
+
+func CreateInstance[T any](size ...int) (t T) {
+	s := 0
+	if len(size) > 0 {
+		s = size[0]
+	}
+	switch reflect.TypeFor[T]().Kind() {
+	case reflect.Array:
+		return reflect.New(reflect.TypeFor[T]()).Elem().Interface().(T)
+	case reflect.Map:
+		return reflect.MakeMap(reflect.TypeFor[T]()).Interface().(T)
+	case reflect.Pointer:
+		return reflect.New(reflect.TypeFor[T]().Elem()).Interface().(T)
+	case reflect.Slice:
+		return reflect.MakeSlice(reflect.TypeFor[T](), s, s).Interface().(T)
+	case reflect.Chan:
+		return reflect.MakeChan(reflect.TypeFor[T](), s).Interface().(T)
+	}
+	return
 }
